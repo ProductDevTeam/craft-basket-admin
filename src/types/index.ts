@@ -74,4 +74,40 @@ export interface ApiResponse<T> {
   success: boolean;
   message?: string;
   data?: T;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPages?: number;
+  };
+}
+
+export interface DashboardStats {
+  totalProducts: number;
+  totalVendors: number;
+  totalOrders: number;
+  recentProducts?: number;
+  recentOrders?: number;
+  totalRevenue?: number;
+  orderStats?: Array<{
+    _id: string;
+    count: number;
+    totalAmount: number;
+  }>;
+  recentOrdersList?: Array<{
+    _id: string;
+    orderNumber: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    customer?: {
+      firstName: string;
+      lastName: string;
+    };
+  }>;
+  monthlyStats?: Array<{
+    month: string;
+    orders: number;
+    revenue: number;
+  }>;
 }
