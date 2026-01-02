@@ -28,10 +28,10 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-gray-100 to-stone-100 p-4">
       <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader className="space-y-4 text-center pb-2">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#4a3032' }}>
             <ShoppingBasket className="w-8 h-8 text-white" />
           </div>
           <div>
@@ -54,7 +54,10 @@ export function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 border-gray-200 focus:border-amber-500 focus:ring-amber-500"
+                className="h-11 border-gray-200"
+                style={{
+                  '--tw-ring-color': '#4a3032',
+                } as React.CSSProperties}
               />
             </div>
             <div className="space-y-2">
@@ -68,13 +71,17 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 border-gray-200 focus:border-amber-500 focus:ring-amber-500"
+                className="h-11 border-gray-200"
+                style={{
+                  '--tw-ring-color': '#4a3032',
+                } as React.CSSProperties}
               />
             </div>
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium shadow-md"
+              className="w-full h-11 text-white font-medium shadow-md hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: '#4a3032' }}
             >
               {isLoading ? (
                 <>

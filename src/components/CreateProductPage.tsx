@@ -223,7 +223,7 @@ export function CreateProductPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#4a3032' }} />
       </div>
     );
   }
@@ -340,14 +340,14 @@ export function CreateProductPage() {
                     <X className="w-4 h-4" />
                   </button>
                   {index === 0 && (
-                    <span className="absolute bottom-1 left-1 text-xs bg-amber-500 text-white px-2 py-0.5 rounded">
+                    <span className="absolute bottom-1 left-1 text-xs text-white px-2 py-0.5 rounded" style={{ backgroundColor: '#4a3032' }}>
                       Main
                     </span>
                   )}
                 </div>
               ))}
               {images.length < 10 && (
-                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-amber-500 transition-colors">
+                <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer transition-colors" style={{ '--hover-border': '#4a3032' } as React.CSSProperties} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#4a3032'} onMouseLeave={(e) => e.currentTarget.style.borderColor = ''}>
                   <Upload className="w-6 h-6 text-gray-400" />
                   <span className="text-xs text-gray-500 mt-1">Upload</span>
                   <input
@@ -501,13 +501,15 @@ export function CreateProductPage() {
                   {tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm"
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm"
+                      style={{ backgroundColor: '#f5f3f3', color: '#4a3032' }}
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => removeTag(index)}
-                        className="text-amber-600 hover:text-red-500"
+                        className="hover:text-red-500"
+                        style={{ color: '#4a3032' }}
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -680,7 +682,8 @@ export function CreateProductPage() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8"
+            className="text-white px-8 hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#4a3032' }}
           >
             {isSubmitting ? (
               <>

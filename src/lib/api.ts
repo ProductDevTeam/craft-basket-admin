@@ -1,4 +1,4 @@
-import { ApiResponse, Vendor, Category, User } from '../types';
+import { ApiResponse, Vendor, Category, User, DashboardStats } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -60,6 +60,34 @@ class ApiClient {
       method: 'POST',
       body: formData,
     });
+  }
+
+  async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
+    return this.request('/admin/dashboard/stats');
+  }
+
+  async inviteVendor(email: string): Promise<ApiResponse<unknown>> {
+    return this.request('/admin/invite-vendor', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async getProducts(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<ApiResponse<any[]>> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+
+    return this.request(`/admin/products?${queryParams.toString()}`);
+  }
+
+  async getProduct(id: string): Promise<ApiResponse<unknown>> {
+    return this.request(`/admin/products/${id}`);
   }
 }
 
