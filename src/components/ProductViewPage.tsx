@@ -19,6 +19,8 @@ import {
   Star,
   TrendingUp,
   Box,
+  Image as ImageIcon,
+  Video as VideoIcon,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
@@ -50,6 +52,11 @@ interface Product {
     url: string;
     isMain: boolean;
   }>;
+  videos?: Array<{
+    url: string;
+    thumbnail?: string;
+    isMain: boolean;
+  }>;
   stock: number;
   sku: string;
   isActive: boolean;
@@ -72,6 +79,7 @@ export function ProductViewPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string>('');
+  const [mediaType, setMediaType] = useState<'images' | 'videos'>('images');
 
   useEffect(() => {
     fetchProduct();
@@ -82,9 +90,10 @@ export function ProductViewPage() {
       setIsLoading(true);
       const response = await apiClient.getProduct(id!);
       if (response.success && response.data) {
-        setProduct(response.data as Product);
-        const mainImg = (response.data as Product).images.find((img) => img.isMain);
-        setSelectedImage(mainImg?.url || (response.data as Product).images[0]?.url || '');
+        const productData = response.data as Product;
+        setProduct(productData);
+        const mainImg = productData.images.find((img) => img.isMain);
+        setSelectedImage(mainImg?.url || productData.images[0]?.url || '');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load product';
@@ -94,6 +103,19 @@ export function ProductViewPage() {
       setIsLoading(false);
     }
   };
+
+  // Update selected media when mediaType changes
+  useEffect(() => {
+    if (!product) return;
+
+    if (mediaType === 'videos' && product.videos && product.videos.length > 0) {
+      const mainVideo = product.videos.find((vid) => vid.isMain);
+      setSelectedImage(mainVideo?.url || product.videos[0].url);
+    } else if (mediaType === 'images') {
+      const mainImg = product.images.find((img) => img.isMain);
+      setSelectedImage(mainImg?.url || product.images[0]?.url || '');
+    }
+  }, [mediaType, product]);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
@@ -157,25 +179,64 @@ export function ProductViewPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Images */}
+        {/* Left Column - Media */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Main Image */}
+          {/* Media Type Selector */}
+          {product.videos && product.videos.length > 0 && (
+            <div className="flex gap-2">
+              <Button
+                variant={mediaType === 'images' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMediaType('images')}
+                className={mediaType === 'images' ? 'text-white' : ''}
+                style={mediaType === 'images' ? { backgroundColor: '#4a3032' } : {}}
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Images ({product.images.length})
+              </Button>
+              <Button
+                variant={mediaType === 'videos' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMediaType('videos')}
+                className={mediaType === 'videos' ? 'text-white' : ''}
+                style={mediaType === 'videos' ? { backgroundColor: '#4a3032' } : {}}
+              >
+                <VideoIcon className="w-4 h-4 mr-2" />
+                Videos ({product.videos.length})
+              </Button>
+            </div>
+          )}
+
+          {/* Main Media Display */}
           <Card className="border-0 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <div className="aspect-video bg-gray-100 relative">
-                <img
-                  src={selectedImage}
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                />
+                {mediaType === 'images' ? (
+                  <img
+                    src={selectedImage}
+                    alt={product.name}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  product.videos && product.videos.length > 0 && (
+                    <video
+                      src={selectedImage}
+                      controls
+                      className="w-full h-full object-contain"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  )
+                )}
                 {!product.isActive && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <Badge className="bg-red-500 text-white text-lg px-4 py-2">Inactive</Badge>
                   </div>
                 )}
               </div>
+
               {/* Thumbnail Gallery */}
-              {product.images.length > 1 && (
+              {mediaType === 'images' && product.images.length > 1 && (
                 <div className="flex gap-2 p-4 overflow-x-auto">
                   {product.images.map((img, idx) => (
                     <button
@@ -188,6 +249,28 @@ export function ProductViewPage() {
                       }`}
                     >
                       <img src={img.url} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Video Thumbnails */}
+              {mediaType === 'videos' && product.videos && product.videos.length > 1 && (
+                <div className="flex gap-2 p-4 overflow-x-auto">
+                  {product.videos.map((video, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedImage(video.url)}
+                      className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedImage === video.url
+                          ? 'border-[#4a3032] ring-2 ring-[#4a3032]/20'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <video src={video.url} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <VideoIcon className="w-6 h-6 text-white" />
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -257,11 +340,11 @@ export function ProductViewPage() {
             <CardContent className="space-y-4">
               {/* Price */}
               <div>
-                <p className="text-3xl font-bold text-gray-900">${product.basePrice.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">₦{product.basePrice.toLocaleString()}</p>
                 {product.compareAtPrice && (
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-lg text-gray-400 line-through">
-                      ${product.compareAtPrice.toLocaleString()}
+                      ₦{product.compareAtPrice.toLocaleString()}
                     </p>
                     {product.discountPercentage && (
                       <Badge className="bg-red-100 text-red-800">-{product.discountPercentage}%</Badge>
