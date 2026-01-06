@@ -99,6 +99,13 @@ export function CreateProductPage() {
     loadData();
   }, [loadData]);
 
+  // Scroll to top when navigating between steps so the next step starts at the top
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length + images.length > 10) {
