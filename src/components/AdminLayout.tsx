@@ -27,7 +27,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // Exact match for dashboard
+    if (path === '/dashboard') {
+      return location.pathname === path;
+    }
+    // For products, match /products, /products/:id, and /create-product
+    if (path === '/products') {
+      return location.pathname.startsWith('/products') || location.pathname === '/create-product';
+    }
+    // Default exact match for other routes
+    return location.pathname === path;
+  };
 
   const navigationItems = [
     {

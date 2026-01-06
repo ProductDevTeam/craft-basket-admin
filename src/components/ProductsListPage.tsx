@@ -209,11 +209,11 @@ export function ProductsListPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="text-xl font-bold text-gray-900">
-                        ${product.basePrice.toLocaleString()}
+                        ₦{product.basePrice.toLocaleString()}
                       </p>
                       {product.compareAtPrice && (
                         <p className="text-sm text-gray-400 line-through">
-                          ${product.compareAtPrice.toLocaleString()}
+                          ₦{product.compareAtPrice.toLocaleString()}
                         </p>
                       )}
                     </div>

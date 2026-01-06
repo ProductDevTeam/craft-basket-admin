@@ -164,7 +164,7 @@ export function DashboardPage() {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  ${stats.totalRevenue.toLocaleString()}
+                  ₦{stats.totalRevenue.toLocaleString()}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#6b4a4d' }}>
@@ -229,7 +229,7 @@ export function DashboardPage() {
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                     }}
-                    formatter={(value: number) => `$${value.toLocaleString()}`}
+                    formatter={(value: number) => `₦${value.toLocaleString()}`}
                   />
                   <Bar dataKey="revenue" fill="#4a3032" radius={[8, 8, 0, 0]} />
                 </BarChart>

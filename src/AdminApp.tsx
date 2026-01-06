@@ -7,7 +7,7 @@ import { DashboardPage } from './components/DashboardPage';
 import { CreateProductPage } from './components/CreateProductPage';
 import { ProductsListPage } from './components/ProductsListPage';
 import { ProductViewPage } from './components/ProductViewPage';
-import { Toaster } from '@/components/ui/sonner';
+
 
 function AdminContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -41,7 +41,6 @@ export default function AdminApp() {
   return (
     <AuthProvider>
       <AdminContent />
-      <Toaster position="top-right" />
     </AuthProvider>
   );
 }
