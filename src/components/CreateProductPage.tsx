@@ -56,6 +56,25 @@ export function CreateProductPage() {
   const [videos, setVideos] = useState<File[]>([]);
   const [mainVideoIndex, setMainVideoIndex] = useState<number | null>(null);
 
+  // Validation touch state for highlighting required fields
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const setTouchedField = (name: string) => setTouched((prev) => ({ ...prev, [name]: true }));
+  const markStepTouched = (step: number) => {
+    switch (step) {
+      case 1:
+        setTouched((prev) => ({ ...prev, vendorId: true, name: true, description: true, category: true, sku: true }));
+        break;
+      case 2:
+        setTouched((prev) => ({ ...prev, images: true }));
+        break;
+      case 3:
+        setTouched((prev) => ({ ...prev, basePrice: true }));
+        break;
+      default:
+        break;
+    }
+  };
+
   const loadData = useCallback(async () => {
     try {
       const [vendorsRes, categoriesRes] = await Promise.all([
@@ -218,18 +237,21 @@ export function CreateProductPage() {
     switch (step) {
       case 1:
         if (!vendorId || !name || !description || !category || !sku) {
+          markStepTouched(1);
           toast.error('Please fill in all required fields');
           return false;
         }
         return true;
       case 2:
         if (images.length === 0) {
+          markStepTouched(2);
           toast.error('Please upload at least one product image');
           return false;
         }
         return true;
       case 3:
         if (!basePrice) {
+          markStepTouched(3);
           toast.error('Please enter the base price');
           return false;
         }
@@ -402,7 +424,10 @@ export function CreateProductPage() {
                 <div className="space-y-2">
                   <Label htmlFor="vendor">Vendor *</Label>
                   <Select value={vendorId} onValueChange={setVendorId}>
-                    <SelectTrigger className={!vendorId && isSubmitting ? 'border-red-500' : ''}>
+                    <SelectTrigger
+                      onBlur={() => setTouchedField('vendorId')}
+                      className={!vendorId && (isSubmitting || touched.vendorId) ? 'border-red-500 ring-1 ring-red-500' : ''}
+                    >
                       <SelectValue placeholder="Select a vendor" />
                     </SelectTrigger>
                     <SelectContent>
@@ -413,11 +438,17 @@ export function CreateProductPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {!vendorId && (isSubmitting || touched.vendorId) && (
+                    <p className="text-sm text-red-600 mt-1">Vendor is required</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
                   <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className={!category && isSubmitting ? 'border-red-500' : ''}>
+                    <SelectTrigger
+                      onBlur={() => setTouchedField('category')}
+                      className={!category && (isSubmitting || touched.category) ? 'border-red-500 ring-1 ring-red-500' : ''}
+                    >
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -428,6 +459,9 @@ export function CreateProductPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {!category && (isSubmitting || touched.category) && (
+                    <p className="text-sm text-red-600 mt-1">Category is required</p>
+                  )}
                 </div>
               </div>
 
@@ -437,9 +471,13 @@ export function CreateProductPage() {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => setTouchedField('name')}
                   placeholder="Enter product name"
-                  className={!name && isSubmitting ? 'border-red-500' : ''}
+                  className={!name && (isSubmitting || touched.name) ? 'border-red-500 ring-1 ring-red-500' : ''}
                 />
+                {!name && (isSubmitting || touched.name) && (
+                  <p className="text-sm text-red-600 mt-1">Product name is required</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -482,10 +520,14 @@ export function CreateProductPage() {
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  onBlur={() => setTouchedField('description')}
                   placeholder="Detailed product description"
                   rows={4}
-                  className={!description && isSubmitting ? 'border-red-500' : ''}
+                  className={!description && (isSubmitting || touched.description) ? 'border-red-500 ring-1 ring-red-500' : ''}
                 />
+                {!description && (isSubmitting || touched.description) && (
+                  <p className="text-sm text-red-600 mt-1">Full description is required</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -494,9 +536,13 @@ export function CreateProductPage() {
                   id="sku"
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
+                  onBlur={() => setTouchedField('sku')}
                   placeholder="e.g., CB-001"
-                  className={!sku && isSubmitting ? 'border-red-500' : ''}
+                  className={!sku && (isSubmitting || touched.sku) ? 'border-red-500 ring-1 ring-red-500' : ''}
                 />
+                {!sku && (isSubmitting || touched.sku) && (
+                  <p className="text-sm text-red-600 mt-1">SKU is required</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -530,19 +576,24 @@ export function CreateProductPage() {
                     </div>
                   ))}
                   {images.length < 10 && (
-                    <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-[#4a3032] transition-colors">
+                    <label
+                      className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-colors ${images.length === 0 && (isSubmitting || touched.images) ? 'border-red-500 ring-1 ring-red-500' : 'border-dashed border-gray-300 hover:border-[#4a3032]'}`}
+                    >
                       <Upload className="w-6 h-6 text-gray-400" />
                       <span className="text-xs text-gray-500 mt-1">Upload</span>
                       <input
                         type="file"
                         accept="image/*"
                         multiple
-                        onChange={handleImageChange}
+                        onChange={(e) => { handleImageChange(e); setTouchedField('images'); }}
                         className="hidden"
                       />
                     </label>
                   )}
                 </div>
+                {images.length === 0 && (isSubmitting || touched.images) && (
+                  <p className="text-sm text-red-600 mt-2">Please upload at least one product image</p>
+                )}
               </CardContent>
             </Card>
 
@@ -621,9 +672,13 @@ export function CreateProductPage() {
                     min="0"
                     value={basePrice}
                     onChange={(e) => setBasePrice(e.target.value)}
+                    onBlur={() => setTouchedField('basePrice')}
                     placeholder="0.00"
-                    className={!basePrice && isSubmitting ? 'border-red-500' : ''}
+                    className={!basePrice && (isSubmitting || touched.basePrice) ? 'border-red-500 ring-1 ring-red-500' : ''}
                   />
+                  {!basePrice && (isSubmitting || touched.basePrice) && (
+                    <p className="text-sm text-red-600 mt-1">Base price is required</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
