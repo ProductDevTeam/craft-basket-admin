@@ -31,38 +31,66 @@ export interface KeyInfo {
   value: string;
 }
 
-export interface PersonalizationOption {
-  name: string;
-  type: 'text' | 'select' | 'color';
-  options?: string[];
-  placeholder?: string;
-  required: boolean;
-  maxLength?: number;
-  priceModifier?: number;
-}
+// Personalization types available for products
+export type PersonalizationType = 
+  | 'engraving'
+  | 'sticker'
+  | 'print-on'
+  | 'none';
 
 export interface ProductFormData {
   vendorId: string;
   name: string;
   description: string;
   shortDescription?: string;
-  category: string;
+  categories: string[]; // Changed to array for multi-category
+  occasion?: string[];
+  giftType?: string[];
   basePrice: number;
-  compareAtPrice?: number;
   discountPercentage?: number;
   weight?: string;
   color?: string;
   materials: string[];
   keyInfo: KeyInfo[];
-  personalizationOptions: PersonalizationOption[];
-  isPersonalizable: boolean;
+  personalizationType?: PersonalizationType;
   estimatedDeliveryDays?: number;
   isBestSeller: boolean;
   isFeatured: boolean;
+  isMadeInNigeria: boolean;
   stock: number;
   sku: string;
   tags: string[];
 }
+
+// Filter options for product listing
+export const OCCASION_OPTIONS = [
+  'Wedding',
+  'Corporate Gifting',
+  'Birthdays',
+  'Condolence & Remembrance',
+  'Friends & Loved Ones',
+  'Notable Holidays',
+] as const;
+
+export const GIFT_TYPE_OPTIONS = [
+  'For Him',
+  'For Her',
+  'For Kids',
+  'Boxes & Hampers',
+  'Beauty & Grooming',
+  'Keepsakes',
+  'Accessories',
+  'Home And Decor',
+  'Personalised Gifts',
+  'Flowers & Cards',
+] as const;
+
+export const PERSONALIZATION_TYPE_OPTIONS: { value: PersonalizationType; label: string }[] = [
+  { value: 'none', label: 'No Personalization' },
+  { value: 'engraving', label: 'Engraving' },
+  { value: 'sticker', label: 'Sticker' },
+  { value: 'print-on', label: 'Print-on' },
+];
 
 export interface AuthState {
   token: string | null;

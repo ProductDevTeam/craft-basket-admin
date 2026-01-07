@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
-import { Vendor, Category, KeyInfo, PersonalizationOption } from '../types';
+import { Vendor, Category, KeyInfo, PersonalizationType, OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, PERSONALIZATION_TYPE_OPTIONS } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,10 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2, Plus, X, Upload, HelpCircle, Info, Check, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence, PageTransition } from '@/lib/motion';
+import { FormSkeleton } from '@/components/ui/skeletons';
 
 const STEPS = [
   { id: 1, name: 'Basic Info', description: 'Product details' },
@@ -22,6 +26,7 @@ const STEPS = [
 ];
 
 export function CreateProductPage() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -35,19 +40,21 @@ export function CreateProductPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [shortDescription, setShortDescription] = useState('');
-  const [category, setCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
+  const [selectedGiftTypes, setSelectedGiftTypes] = useState<string[]>([]);
   const [basePrice, setBasePrice] = useState('');
-  const [compareAtPrice, setCompareAtPrice] = useState('');
+  const [discountPercentage, setDiscountPercentage] = useState('');
   const [weight, setWeight] = useState('');
   const [color, setColor] = useState('');
   const [materials, setMaterials] = useState<string[]>([]);
   const [materialInput, setMaterialInput] = useState('');
   const [keyInfo, setKeyInfo] = useState<KeyInfo[]>([]);
-  const [personalizationOptions, setPersonalizationOptions] = useState<PersonalizationOption[]>([]);
-  const [isPersonalizable, setIsPersonalizable] = useState(false);
+  const [personalizationType, setPersonalizationType] = useState<PersonalizationType>('none');
   const [estimatedDeliveryDays, setEstimatedDeliveryDays] = useState('');
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isMadeInNigeria, setIsMadeInNigeria] = useState(false);
   const [stock, setStock] = useState('0');
   const [sku, setSku] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -56,13 +63,23 @@ export function CreateProductPage() {
   const [videos, setVideos] = useState<File[]>([]);
   const [mainVideoIndex, setMainVideoIndex] = useState<number | null>(null);
 
+  // Calculate discounted price live preview
+  const discountedPrice = useMemo(() => {
+    const price = parseFloat(basePrice) || 0;
+    const discount = parseFloat(discountPercentage) || 0;
+    if (price > 0 && discount > 0 && discount <= 100) {
+      return price - (price * discount / 100);
+    }
+    return null;
+  }, [basePrice, discountPercentage]);
+
   // Validation touch state for highlighting required fields
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const setTouchedField = (name: string) => setTouched((prev) => ({ ...prev, [name]: true }));
   const markStepTouched = (step: number) => {
     switch (step) {
       case 1:
-        setTouched((prev) => ({ ...prev, vendorId: true, name: true, description: true, category: true, sku: true }));
+        setTouched((prev) => ({ ...prev, vendorId: true, name: true, description: true, categories: true, sku: true }));
         break;
       case 2:
         setTouched((prev) => ({ ...prev, images: true }));
@@ -73,6 +90,33 @@ export function CreateProductPage() {
       default:
         break;
     }
+  };
+
+  // Toggle category selection
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  // Toggle occasion selection
+  const toggleOccasion = (occasion: string) => {
+    setSelectedOccasions((prev) =>
+      prev.includes(occasion)
+        ? prev.filter((o) => o !== occasion)
+        : [...prev, occasion]
+    );
+  };
+
+  // Toggle gift type selection
+  const toggleGiftType = (giftType: string) => {
+    setSelectedGiftTypes((prev) =>
+      prev.includes(giftType)
+        ? prev.filter((g) => g !== giftType)
+        : [...prev, giftType]
+    );
   };
 
   const loadData = useCallback(async () => {
@@ -190,45 +234,26 @@ export function CreateProductPage() {
     setMainVideoIndex(index);
   };
 
-  const addPersonalizationOption = () => {
-    setPersonalizationOptions((prev) => [
-      ...prev,
-      { name: '', type: 'text', required: false },
-    ]);
-  };
-
-  const updatePersonalizationOption = (
-    index: number,
-    field: keyof PersonalizationOption,
-    value: unknown
-  ) => {
-    setPersonalizationOptions((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
-  };
-
-  const removePersonalizationOption = (index: number) => {
-    setPersonalizationOptions((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const resetForm = () => {
     setVendorId('');
     setName('');
     setDescription('');
     setShortDescription('');
-    setCategory('');
+    setSelectedCategories([]);
+    setSelectedOccasions([]);
+    setSelectedGiftTypes([]);
     setBasePrice('');
-    setCompareAtPrice('');
+    setDiscountPercentage('');
     setWeight('');
     setColor('');
     setMaterials([]);
     setMaterialInput('');
     setKeyInfo([]);
-    setPersonalizationOptions([]);
-    setIsPersonalizable(false);
+    setPersonalizationType('none');
     setEstimatedDeliveryDays('');
     setIsBestSeller(false);
     setIsFeatured(false);
+    setIsMadeInNigeria(false);
     setStock('0');
     setSku('');
     setTags([]);
@@ -243,7 +268,7 @@ export function CreateProductPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        if (!vendorId || !name || !description || !category || !sku) {
+        if (!vendorId || !name || !description || selectedCategories.length === 0 || !sku) {
           markStepTouched(1);
           toast.error('Please fill in all required fields');
           return false;
@@ -309,20 +334,22 @@ export function CreateProductPage() {
       formData.append('name', name);
       formData.append('description', description);
       if (shortDescription) formData.append('shortDescription', shortDescription);
-      formData.append('category', category);
+      formData.append('categories', JSON.stringify(selectedCategories));
+      if (selectedOccasions.length) formData.append('occasion', JSON.stringify(selectedOccasions));
+      if (selectedGiftTypes.length) formData.append('giftType', JSON.stringify(selectedGiftTypes));
       formData.append('basePrice', basePrice);
-      if (compareAtPrice) formData.append('compareAtPrice', compareAtPrice);
+      if (discountPercentage) formData.append('discountPercentage', discountPercentage);
       if (weight) formData.append('weight', weight);
       if (color) formData.append('color', color);
       if (materials.length) formData.append('materials', JSON.stringify(materials));
       if (keyInfo.length) formData.append('keyInfo', JSON.stringify(keyInfo.filter(k => k.label && k.value)));
-      if (personalizationOptions.length) {
-        formData.append('personalizationOptions', JSON.stringify(personalizationOptions.filter(p => p.name)));
+      if (personalizationType && personalizationType !== 'none') {
+        formData.append('personalizationType', personalizationType);
       }
-      formData.append('isPersonalizable', String(isPersonalizable));
       if (estimatedDeliveryDays) formData.append('estimatedDeliveryDays', estimatedDeliveryDays);
       formData.append('isBestSeller', String(isBestSeller));
       formData.append('isFeatured', String(isFeatured));
+      formData.append('isMadeInNigeria', String(isMadeInNigeria));
       formData.append('stock', stock || '0');
       formData.append('sku', sku);
       if (tags.length) formData.append('tags', JSON.stringify(tags));
@@ -346,9 +373,8 @@ export function CreateProductPage() {
 
       toast.success('Product created successfully!');
       setTimeout(() => {
-        resetForm();
-        setUploadProgress(0);
-      }, 1000);
+        navigate('/products');
+      }, 500);
     } catch (error) {
       setUploadProgress(0);
       toast.error(error instanceof Error ? error.message : 'Failed to create product');
@@ -359,29 +385,47 @@ export function CreateProductPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#4a3032' }} />
-      </div>
+      <PageTransition className="space-y-6">
+        <div>
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
+          <div className="h-4 w-96 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <FormSkeleton />
+      </PageTransition>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <PageTransition className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <h1 className="text-3xl font-bold text-gray-900">Create Product</h1>
         <p className="text-gray-600 mt-1">
           Create a product on behalf of a vendor. The product will be auto-approved.
         </p>
-      </div>
+      </motion.div>
 
       {/* Stepper */}
-      <Card className="border-0 shadow-sm">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            {STEPS.map((step, index) => (
-              <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center">
-                  <div
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card className="border-0 shadow-sm">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              {STEPS.map((step, index) => (
+                <React.Fragment key={step.id}>
+                  <motion.div
+                    className="flex flex-col items-center"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div
                     className={cn(
                       'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors',
                       currentStep > step.id
@@ -390,7 +434,7 @@ export function CreateProductPage() {
                         ? 'text-white'
                         : 'bg-gray-100 text-gray-400'
                     )}
-                    style={currentStep === step.id ? { backgroundColor: '#4a3032' } : {}}
+                    style={currentStep === step.id ? { backgroundColor: '#F6511E' } : {}}
                   >
                     {currentStep > step.id ? <Check className="w-5 h-5" /> : step.id}
                   </div>
@@ -400,14 +444,16 @@ export function CreateProductPage() {
                     </p>
                     <p className="text-xs text-gray-400">{step.description}</p>
                   </div>
-                </div>
+                  </motion.div>
                 {index < STEPS.length - 1 && (
                   <div className="flex-1 h-0.5 bg-gray-200 mx-2 sm:mx-4">
-                    <div
-                      className="h-full transition-all duration-300"
+                    <motion.div
+                      className="h-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: currentStep > step.id ? '100%' : '0%' }}
+                      transition={{ duration: 0.4 }}
                       style={{
                         backgroundColor: currentStep > step.id ? '#10b981' : '#e5e7eb',
-                        width: currentStep > step.id ? '100%' : '0%',
                       }}
                     />
                   </div>
@@ -417,10 +463,19 @@ export function CreateProductPage() {
           </div>
         </CardContent>
       </Card>
+      </motion.div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <AnimatePresence mode="wait">
         {/* Step 1: Basic Information */}
         {currentStep === 1 && (
+          <motion.div
+            key="step-1"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -450,25 +505,119 @@ export function CreateProductPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger
-                      onBlur={() => setTouchedField('category')}
-                      className={!category && (isSubmitting || touched.category) ? 'border-red-500 ring-1 ring-red-500' : ''}
-                    >
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {!category && (isSubmitting || touched.category) && (
-                    <p className="text-sm text-red-600 mt-1">Category is required</p>
+                  <Label htmlFor="sku">SKU *</Label>
+                  <Input
+                    id="sku"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    onBlur={() => setTouchedField('sku')}
+                    placeholder="e.g., EB-001"
+                    className={!sku && (isSubmitting || touched.sku) ? 'border-red-500 ring-1 ring-red-500' : ''}
+                  />
+                  {!sku && (isSubmitting || touched.sku) && (
+                    <p className="text-sm text-red-600 mt-1">SKU is required</p>
                   )}
+                </div>
+              </div>
+
+              {/* Categories - Multi-select */}
+              <div className="space-y-2">
+                <Label>Categories * <span className="text-gray-500 font-normal">(Select one or more)</span></Label>
+                <div
+                  className={cn(
+                    'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 border rounded-lg',
+                    selectedCategories.length === 0 && (isSubmitting || touched.categories) ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                  )}
+                >
+                  {categories.map((cat) => (
+                    <div key={cat._id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`cat-${cat._id}`}
+                        checked={selectedCategories.includes(cat._id)}
+                        onCheckedChange={() => {
+                          toggleCategory(cat._id);
+                          setTouchedField('categories');
+                        }}
+                      />
+                      <label
+                        htmlFor={`cat-${cat._id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {cat.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {selectedCategories.length === 0 && (isSubmitting || touched.categories) && (
+                  <p className="text-sm text-red-600 mt-1">Please select at least one category</p>
+                )}
+                {selectedCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedCategories.map((catId) => {
+                      const cat = categories.find((c) => c._id === catId);
+                      return cat ? (
+                        <span
+                          key={catId}
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm"
+                          style={{ backgroundColor: '#fef3e7', color: '#F6511E' }}
+                        >
+                          {cat.name}
+                          <button
+                            type="button"
+                            onClick={() => toggleCategory(catId)}
+                            className="hover:text-red-500"
+                            style={{ color: '#F6511E' }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Occasions - Multi-select */}
+              <div className="space-y-2">
+                <Label>Occasion <span className="text-gray-500 font-normal">(Optional - helps with filtering)</span></Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 border border-gray-200 rounded-lg">
+                  {OCCASION_OPTIONS.map((occasion) => (
+                    <div key={occasion} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`occ-${occasion}`}
+                        checked={selectedOccasions.includes(occasion)}
+                        onCheckedChange={() => toggleOccasion(occasion)}
+                      />
+                      <label
+                        htmlFor={`occ-${occasion}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {occasion}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gift Types - Multi-select */}
+              <div className="space-y-2">
+                <Label>Gift Type <span className="text-gray-500 font-normal">(Optional - helps with filtering)</span></Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 border border-gray-200 rounded-lg">
+                  {GIFT_TYPE_OPTIONS.map((giftType) => (
+                    <div key={giftType} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`gift-${giftType}`}
+                        checked={selectedGiftTypes.includes(giftType)}
+                        onCheckedChange={() => toggleGiftType(giftType)}
+                      />
+                      <label
+                        htmlFor={`gift-${giftType}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {giftType}
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -536,28 +685,20 @@ export function CreateProductPage() {
                   <p className="text-sm text-red-600 mt-1">Full description is required</p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU *</Label>
-                <Input
-                  id="sku"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  onBlur={() => setTouchedField('sku')}
-                  placeholder="e.g., CB-001"
-                  className={!sku && (isSubmitting || touched.sku) ? 'border-red-500 ring-1 ring-red-500' : ''}
-                />
-                {!sku && (isSubmitting || touched.sku) && (
-                  <p className="text-sm text-red-600 mt-1">SKU is required</p>
-                )}
-              </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Step 2: Media */}
         {currentStep === 2 && (
-          <>
+          <motion.div
+            key="step-2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
             <Card className="border-0 shadow-sm">
               <CardHeader>
                 <CardTitle>Product Images *</CardTitle>
@@ -576,7 +717,7 @@ export function CreateProductPage() {
                         <X className="w-4 h-4" />
                       </button>
                       {index === 0 && (
-                        <span className="absolute bottom-1 left-1 text-xs text-white px-2 py-0.5 rounded" style={{ backgroundColor: '#4a3032' }}>
+                        <span className="absolute bottom-1 left-1 text-xs text-white px-2 py-0.5 rounded" style={{ backgroundColor: '#F6511E' }}>
                           Main
                         </span>
                       )}
@@ -584,7 +725,7 @@ export function CreateProductPage() {
                   ))}
                   {images.length < 10 && (
                     <label
-                      className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-colors ${images.length === 0 && (isSubmitting || touched.images) ? 'border-red-500 ring-1 ring-red-500' : 'border-dashed border-gray-300 hover:border-[#4a3032]'}`}
+                      className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-colors ${images.length === 0 && (isSubmitting || touched.images) ? 'border-red-500 ring-1 ring-red-500' : 'border-dashed border-gray-300 hover:border-[#F6511E]'}`}
                     >
                       <Upload className="w-6 h-6 text-gray-400" />
                       <span className="text-xs text-gray-500 mt-1">Upload</span>
@@ -623,7 +764,7 @@ export function CreateProductPage() {
                       </button>
                       <div className="absolute bottom-2 left-2 flex gap-2">
                         {mainVideoIndex === index ? (
-                          <span className="text-xs text-white px-2 py-1 rounded" style={{ backgroundColor: '#4a3032' }}>
+                          <span className="text-xs text-white px-2 py-1 rounded" style={{ backgroundColor: '#F6511E' }}>
                             Main Video
                           </span>
                         ) : (
@@ -642,7 +783,7 @@ export function CreateProductPage() {
                     </div>
                   ))}
                   {videos.length < 3 && (
-                    <label className="aspect-video rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-[#4a3032] transition-colors">
+                    <label className="aspect-video rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-[#F6511E] transition-colors">
                       <Upload className="w-8 h-8 text-gray-400" />
                       <span className="text-sm text-gray-500 mt-2">Upload Video</span>
                       <span className="text-xs text-gray-400 mt-1">MP4, MOV (Max 50MB)</span>
@@ -658,11 +799,18 @@ export function CreateProductPage() {
                 </div>
               </CardContent>
             </Card>
-          </>
+          </motion.div>
         )}
 
         {/* Step 3: Pricing & Inventory */}
         {currentStep === 3 && (
+          <motion.div
+            key="step-3"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle>Pricing & Inventory</CardTitle>
@@ -689,26 +837,27 @@ export function CreateProductPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Label htmlFor="compareAtPrice">Compare at Price (₦)</Label>
+                    <Label htmlFor="discountPercentage">Discount (%)</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="max-w-xs">Original price before discount. Shows as strikethrough to display savings.</p>
+                          <p className="max-w-xs">Enter discount percentage (e.g., 20 for 20% off)</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
                   <Input
-                    id="compareAtPrice"
+                    id="discountPercentage"
                     type="number"
-                    step="0.01"
+                    step="1"
                     min="0"
-                    value={compareAtPrice}
-                    onChange={(e) => setCompareAtPrice(e.target.value)}
-                    placeholder="Original price for discount display"
+                    max="100"
+                    value={discountPercentage}
+                    onChange={(e) => setDiscountPercentage(e.target.value)}
+                    placeholder="e.g., 20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -723,12 +872,48 @@ export function CreateProductPage() {
                   />
                 </div>
               </div>
+
+              {/* Live Price Preview */}
+              {(basePrice || discountPercentage) && (
+                <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Price Preview</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-baseline gap-2">
+                      {discountedPrice !== null ? (
+                        <>
+                          <span className="text-2xl font-bold" style={{ color: '#F6511E' }}>
+                            ₦{discountedPrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-lg text-gray-400 line-through">
+                            ₦{parseFloat(basePrice).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="px-2 py-1 text-sm font-medium rounded text-white" style={{ backgroundColor: '#F6511E' }}>
+                            {discountPercentage}% OFF
+                          </span>
+                        </>
+                      ) : basePrice ? (
+                        <span className="text-2xl font-bold text-gray-900">
+                          ₦{parseFloat(basePrice).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Step 4: Product Details */}
         {currentStep === 4 && (
+          <motion.div
+            key="step-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle>Product Details</CardTitle>
@@ -832,14 +1017,14 @@ export function CreateProductPage() {
                       <span
                         key={index}
                         className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm"
-                        style={{ backgroundColor: '#f5f3f3', color: '#4a3032' }}
+                        style={{ backgroundColor: '#fef3e7', color: '#F6511E' }}
                       >
                         {tag}
                         <button
                           type="button"
                           onClick={() => removeTag(index)}
                           className="hover:text-red-500"
-                          style={{ color: '#4a3032' }}
+                          style={{ color: '#F6511E' }}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -903,96 +1088,45 @@ export function CreateProductPage() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         )}
 
         {/* Step 5: Customization & Badges */}
         {currentStep === 5 && (
-          <>
+          <motion.div
+            key="step-5"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
             <Card className="border-0 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Personalization Options</CardTitle>
-                  <CardDescription>Allow customers to personalize this product</CardDescription>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={isPersonalizable}
-                      onCheckedChange={setIsPersonalizable}
-                    />
-                    <Label className="text-sm">Enable Personalization</Label>
-                  </div>
-                  {isPersonalizable && (
-                    <Button type="button" variant="outline" size="sm" onClick={addPersonalizationOption}>
-                      <Plus className="w-4 h-4 mr-1" /> Add Option
-                    </Button>
-                  )}
-                </div>
+              <CardHeader>
+                <CardTitle>Personalization</CardTitle>
+                <CardDescription>Does this product offer personalization options?</CardDescription>
               </CardHeader>
-              {isPersonalizable && (
-                <CardContent>
-                  {personalizationOptions.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">No personalization options added yet</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {personalizationOptions.map((option, index) => (
-                        <div key={index} className="p-4 border rounded-lg space-y-3">
-                          <div className="flex gap-2 items-start">
-                            <Input
-                              placeholder="Option name (e.g., Engraving Text)"
-                              value={option.name}
-                              onChange={(e) => updatePersonalizationOption(index, 'name', e.target.value)}
-                              className="flex-1"
-                            />
-                            <Select
-                              value={option.type}
-                              onValueChange={(value) => updatePersonalizationOption(index, 'type', value as 'text' | 'select' | 'color')}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="text">Text</SelectItem>
-                                <SelectItem value="select">Select</SelectItem>
-                                <SelectItem value="color">Color</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={option.required}
-                                onCheckedChange={(value) => updatePersonalizationOption(index, 'required', value)}
-                              />
-                              <span className="text-xs text-gray-500">Required</span>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removePersonalizationOption(index)}
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <Input
-                              placeholder="Placeholder text"
-                              value={option.placeholder || ''}
-                              onChange={(e) => updatePersonalizationOption(index, 'placeholder', e.target.value)}
-                            />
-                            <Input
-                              type="number"
-                              placeholder="Price modifier (₦)"
-                              value={option.priceModifier || ''}
-                              onChange={(e) => updatePersonalizationOption(index, 'priceModifier', parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
-                        </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="personalizationType">Type of Personalization</Label>
+                  <Select value={personalizationType} onValueChange={(value) => setPersonalizationType(value as PersonalizationType)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select personalization type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PERSONALIZATION_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
                       ))}
-                    </div>
-                  )}
-                </CardContent>
-              )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-gray-500">
+                    {personalizationType === 'none'
+                      ? 'This product does not offer personalization'
+                      : `Customers can request ${PERSONALIZATION_TYPE_OPTIONS.find(o => o.value === personalizationType)?.label.toLowerCase()} for this product`}
+                  </p>
+                </div>
+              </CardContent>
             </Card>
 
             <Card className="border-0 shadow-sm">
@@ -1010,14 +1144,24 @@ export function CreateProductPage() {
                     <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
                     <Label>Featured</Label>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={isMadeInNigeria} onCheckedChange={setIsMadeInNigeria} />
+                    <Label>Made in Nigeria 🇳🇬</Label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </>
+          </motion.div>
         )}
+        </AnimatePresence>
 
         {/* Navigation Buttons */}
-        <div className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="space-y-4"
+        >
           {/* Progress Bar */}
           {isSubmitting && uploadProgress > 0 && (
             <div className="w-full">
@@ -1026,64 +1170,71 @@ export function CreateProductPage() {
                 <span>{uploadProgress}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="h-2.5 rounded-full transition-all duration-300"
+                <motion.div
+                  className="h-2.5 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${uploadProgress}%` }}
                   style={{
-                    backgroundColor: '#4a3032',
-                    width: `${uploadProgress}%`,
+                    backgroundColor: '#F6511E',
                   }}
-                ></div>
+                />
               </div>
             </div>
           )}
 
           <div className="flex justify-between items-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1 || isSubmitting}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Previous
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1 || isSubmitting}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Previous
+              </Button>
+            </motion.div>
 
             <div className="text-sm text-gray-500">
               Step {currentStep} of {STEPS.length}
             </div>
 
             {currentStep < STEPS.length ? (
-              <Button
-                type="button"
-                onClick={nextStep}
-                disabled={isSubmitting}
-                className="text-white gap-2"
-                style={{ backgroundColor: '#4a3032' }}
-              >
-                Next
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={isSubmitting}
+                  className="text-white gap-2"
+                  style={{ backgroundColor: '#F6511E' }}
+                >
+                  Next
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </motion.div>
             ) : (
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="text-white px-8 hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#4a3032' }}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {uploadProgress === 100 ? 'Finalizing...' : 'Creating...'}
-                  </>
-                ) : (
-                  'Create Product'
-                )}
-              </Button>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="text-white px-8 hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: '#F6511E' }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {uploadProgress === 100 ? 'Finalizing...' : 'Creating...'}
+                    </>
+                  ) : (
+                    'Create Product'
+                  )}
+                </Button>
+              </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       </form>
-    </div>
+    </PageTransition>
   );
 }

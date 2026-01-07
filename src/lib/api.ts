@@ -89,6 +89,17 @@ class ApiClient {
   async getProduct(id: string): Promise<ApiResponse<unknown>> {
     return this.request(`/admin/products/${id}`);
   }
+
+  async getActivityLogs(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<any[]>> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+    return this.request(`/admin/activity-logs?${queryParams.toString()}`);
+  }
 }
 
 export const apiClient = new ApiClient();

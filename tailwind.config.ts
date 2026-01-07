@@ -13,7 +13,19 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["DM Sans", "system-ui", "sans-serif"],
+      },
       colors: {
+        // Ebunly Brand Colors
+        ebunly: {
+          orange: "#F6511E",
+          "orange-light": "#FF7A4D",
+          "orange-dark": "#D4410F",
+          brown: "#3D2314",
+          "brown-light": "#5C3A28",
+          "brown-dark": "#2A1810",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

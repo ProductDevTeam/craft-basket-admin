@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, ShoppingBasket } from 'lucide-react';
+import { motion } from '@/lib/motion';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -29,72 +30,100 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-gray-100 to-stone-100 p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="space-y-4 text-center pb-2">
-          <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#4a3032' }}>
-            <ShoppingBasket className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Craft Basket</CardTitle>
-            <CardDescription className="text-gray-600 mt-1">
-              Admin Portal
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-medium">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@craftbasket.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-11 border-gray-200"
-                style={{
-                  '--tw-ring-color': '#4a3032',
-                } as React.CSSProperties}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-medium">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-11 border-gray-200"
-                style={{
-                  '--tw-ring-color': '#4a3032',
-                } as React.CSSProperties}
-              />
-            </div>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-11 text-white font-medium shadow-md hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#4a3032' }}
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="w-full max-w-lg"
+      >
+        <Card className="w-full shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="space-y-4 text-center pb-4 pt-8">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg bg-ebunly-orange"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <ShoppingBasket className="w-10 h-10 text-white" />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <CardTitle className="text-3xl font-bold text-gray-900">Ebunly</CardTitle>
+              <CardDescription className="text-gray-600 mt-2 text-base">
+                Admin Portal
+              </CardDescription>
+            </motion.div>
+          </CardHeader>
+          <CardContent className="pt-4 pb-8 px-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="space-y-2"
+              >
+                <Label htmlFor="email" className="text-gray-700 font-medium text-sm">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@ebunly.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 border-gray-200 text-base focus:border-ebunly-orange focus:ring-ebunly-orange"
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                className="space-y-2"
+              >
+                <Label htmlFor="password" className="text-gray-700 font-medium text-sm">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-12 border-gray-200 text-base focus:border-ebunly-orange focus:ring-ebunly-orange"
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="pt-2"
+              >
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 text-white font-medium text-base shadow-md bg-ebunly-orange hover:bg-ebunly-orange-dark transition-colors"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </motion.div>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

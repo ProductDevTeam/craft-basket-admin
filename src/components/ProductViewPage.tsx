@@ -147,7 +147,7 @@ export function ProductViewPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#4a3032' }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#F6511E' }} />
       </div>
     );
   }
@@ -189,7 +189,7 @@ export function ProductViewPage() {
                 size="sm"
                 onClick={() => setMediaType('images')}
                 className={mediaType === 'images' ? 'text-white' : ''}
-                style={mediaType === 'images' ? { backgroundColor: '#4a3032' } : {}}
+                style={mediaType === 'images' ? { backgroundColor: '#F6511E' } : {}}
               >
                 <ImageIcon className="w-4 h-4 mr-2" />
                 Images ({product.images.length})
@@ -199,7 +199,7 @@ export function ProductViewPage() {
                 size="sm"
                 onClick={() => setMediaType('videos')}
                 className={mediaType === 'videos' ? 'text-white' : ''}
-                style={mediaType === 'videos' ? { backgroundColor: '#4a3032' } : {}}
+                style={mediaType === 'videos' ? { backgroundColor: '#F6511E' } : {}}
               >
                 <VideoIcon className="w-4 h-4 mr-2" />
                 Videos ({product.videos.length})
@@ -244,7 +244,7 @@ export function ProductViewPage() {
                       onClick={() => setSelectedImage(img.url)}
                       className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                         selectedImage === img.url
-                          ? 'border-[#4a3032] ring-2 ring-[#4a3032]/20'
+                          ? 'border-[#F6511E] ring-2 ring-[#F6511E]/20'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -263,7 +263,7 @@ export function ProductViewPage() {
                       onClick={() => setSelectedImage(video.url)}
                       className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                         selectedImage === video.url
-                          ? 'border-[#4a3032] ring-2 ring-[#4a3032]/20'
+                          ? 'border-[#F6511E] ring-2 ring-[#F6511E]/20'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -432,7 +432,7 @@ export function ProductViewPage() {
               <div className="flex items-center gap-3">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold"
-                  style={{ backgroundColor: '#4a3032' }}
+                  style={{ backgroundColor: '#F6511E' }}
                 >
                   {product.vendor.firstName[0]}
                   {product.vendor.lastName[0]}

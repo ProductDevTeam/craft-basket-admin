@@ -55,7 +55,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       name: 'Vendors',
       path: '/vendors',
       icon: Users,
-      disabled: true,
     },
     {
       name: 'Orders',
@@ -77,11 +76,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 hidden lg:flex lg:flex-col">
         {/* Logo */}
         <div className="flex items-center gap-3 h-16 px-6 border-b border-gray-200">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#4a3032' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-ebunly-orange">
             <ShoppingBasket className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Craft Basket</h1>
+            <h1 className="text-lg font-bold text-gray-900">Ebunly</h1>
             <p className="text-xs text-gray-500">Admin Portal</p>
           </div>
         </div>
@@ -97,14 +96,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 onClick={() => !item.disabled && navigate(item.path)}
                 disabled={item.disabled}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                  "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all",
                   active
-                    ? "text-white"
+                    ? "bg-ebunly-orange text-white shadow-md"
                     : item.disabled
                     ? "text-gray-400 cursor-not-allowed"
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 )}
-                style={active ? { backgroundColor: '#4a3032' } : {}}
               >
                 <Icon className="w-5 h-5" />
                 {item.name}
@@ -119,7 +117,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* User section */}
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#4a3032' }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-ebunly-orange">
               <span className="text-sm font-semibold text-white">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </span>
@@ -153,11 +151,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#4a3032' }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-ebunly-orange">
               <ShoppingBasket className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Craft Basket</h1>
+              <h1 className="text-lg font-bold text-gray-900">Ebunly</h1>
               <p className="text-xs text-gray-500">Admin Portal</p>
             </div>
           </div>
@@ -185,14 +183,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 }}
                 disabled={item.disabled}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                  "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all",
                   active
-                    ? "text-white"
+                    ? "bg-ebunly-orange text-white shadow-md"
                     : item.disabled
                     ? "text-gray-400 cursor-not-allowed"
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 )}
-                style={active ? { backgroundColor: '#4a3032' } : {}}
               >
                 <Icon className="w-5 h-5" />
                 {item.name}
@@ -207,7 +204,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* User section */}
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#4a3032' }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-ebunly-orange">
               <span className="text-sm font-semibold text-white">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </span>
@@ -251,10 +248,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#4a3032' }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F6511E' }}>
                 <ShoppingBasket className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-gray-900">Craft Basket</span>
+              <span className="font-bold text-gray-900">Ebunly</span>
             </div>
             <div className="w-6" /> {/* Spacer for balance */}
           </div>
