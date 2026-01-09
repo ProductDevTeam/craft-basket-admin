@@ -1,23 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Loader2, Eye, Edit, Trash2, Filter, Package, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, Loader2, Eye, Edit, Trash2, Filter, Package, Users, X, ChevronDown } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
+import { OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, Category } from '@/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { motion, AnimatePresence, PageTransition, StaggerGrid, StaggerItem, staggerItem } from '@/lib/motion';
+import { ProductGridSkeleton, PageHeaderSkeleton } from '@/components/ui/skeletons';
 
 interface Product {
   _id: string;
   name: string;
   description: string;
   basePrice: number;
+  discountPercentage?: number;
   compareAtPrice?: number;
-  category: {
+  categories?: Array<{
+    _id: string;
+    name: string;
+  }>;
+  category?: {
     _id: string;
     name: string;
   };
+  occasion?: string[];
+  giftType?: string[];
   vendor: {
     _id: string;
     firstName: string;
@@ -34,33 +47,143 @@ interface Product {
   isActive: boolean;
   isFeatured: boolean;
   isBestSeller: boolean;
+  isMadeInNigeria?: boolean;
   approvalStatus: 'pending' | 'approved' | 'rejected';
+  estimatedDeliveryDays?: number;
   createdAt: string;
 }
+
+const PRICE_RANGES = [
+  { label: 'Under ₦5,000', min: 0, max: 5000 },
+  { label: '₦5,000 - ₦10,000', min: 5000, max: 10000 },
+  { label: '₦10,000 - ₦25,000', min: 10000, max: 25000 },
+  { label: '₦25,000 - ₦50,000', min: 25000, max: 50000 },
+  { label: 'Over ₦50,000', min: 50000, max: Infinity },
+];
+
+const DISCOUNT_OPTIONS = [
+  { label: '10% or more', value: 10 },
+  { label: '20% or more', value: 20 },
+  { label: '30% or more', value: 30 },
+  { label: '50% or more', value: 50 },
+];
+
+const DELIVERY_OPTIONS = [
+  { label: 'Within 3 days', days: 3 },
+  { label: 'Within 5 days', days: 5 },
+  { label: 'Within 7 days', days: 7 },
+  { label: 'Within 14 days', days: 14 },
+];
 
 export function ProductsListPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Filter state
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
+  const [selectedGiftTypes, setSelectedGiftTypes] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number; max: number } | null>(null);
+  const [selectedDiscount, setSelectedDiscount] = useState<number | null>(null);
+  const [madeInNigeria, setMadeInNigeria] = useState<boolean | null>(null);
+  const [deliveryDays, setDeliveryDays] = useState<number | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const activeFilterCount = [
+    selectedOccasions.length > 0,
+    selectedGiftTypes.length > 0,
+    selectedCategories.length > 0,
+    selectedPriceRange !== null,
+    selectedDiscount !== null,
+    madeInNigeria !== null,
+    deliveryDays !== null,
+  ].filter(Boolean).length;
+
+  const clearAllFilters = () => {
+    setSelectedOccasions([]);
+    setSelectedGiftTypes([]);
+    setSelectedCategories([]);
+    setSelectedPriceRange(null);
+    setSelectedDiscount(null);
+    setMadeInNigeria(null);
+    setDeliveryDays(null);
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, selectedOccasions, selectedGiftTypes, selectedCategories, selectedPriceRange, selectedDiscount, madeInNigeria, deliveryDays]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await apiClient.getCategories();
+      if (response.success && response.data) {
+        setCategories(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
       const response = await apiClient.getProducts({
         page: currentPage,
-        limit: 10,
+        limit: 100, // Fetch more to allow client-side filtering
         search: searchQuery,
       });
       if (response.success && response.data) {
-        setProducts(Array.isArray(response.data) ? response.data : []);
-        setTotalPages(response.meta?.totalPages || 1);
+        let filteredProducts = Array.isArray(response.data) ? response.data : [];
+
+        // Apply client-side filters
+        if (selectedOccasions.length > 0) {
+          filteredProducts = filteredProducts.filter((p: Product) =>
+            p.occasion?.some((o: string) => selectedOccasions.includes(o))
+          );
+        }
+        if (selectedGiftTypes.length > 0) {
+          filteredProducts = filteredProducts.filter((p: Product) =>
+            p.giftType?.some((g: string) => selectedGiftTypes.includes(g))
+          );
+        }
+        if (selectedCategories.length > 0) {
+          filteredProducts = filteredProducts.filter((p: Product) =>
+            p.categories?.some((c) => selectedCategories.includes(c._id)) ||
+            (p.category && selectedCategories.includes(p.category._id))
+          );
+        }
+        if (selectedPriceRange) {
+          filteredProducts = filteredProducts.filter((p: Product) =>
+            p.basePrice >= selectedPriceRange.min && p.basePrice <= selectedPriceRange.max
+          );
+        }
+        if (selectedDiscount !== null) {
+          filteredProducts = filteredProducts.filter((p: Product) =>
+            (p.discountPercentage || 0) >= selectedDiscount
+          );
+        }
+        if (madeInNigeria !== null) {
+          filteredProducts = filteredProducts.filter((p: Product) =>
+            p.isMadeInNigeria === madeInNigeria
+          );
+        }
+        if (deliveryDays !== null) {
+          filteredProducts = filteredProducts.filter((p: Product) =>
+            (p.estimatedDeliveryDays || 7) <= deliveryDays
+          );
+        }
+
+        setProducts(filteredProducts);
+        setTotalPages(Math.ceil(filteredProducts.length / 10) || 1);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load products';
@@ -90,28 +213,35 @@ export function ProductsListPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <PageTransition className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center justify-between"
+      >
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Products</h1>
           <p className="text-gray-600 mt-1">
             Manage and view all products in your marketplace
           </p>
         </div>
-        <Button
-          onClick={() => navigate('/create-product')}
-          className="text-white gap-2"
-          style={{ backgroundColor: '#4a3032' }}
-        >
-          <Plus className="w-4 h-4" />
-          Create Product
-        </Button>
-      </div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            onClick={() => navigate('/create-product')}
+            className="text-white gap-2"
+            style={{ backgroundColor: '#F6511E' }}
+          >
+            <Plus className="w-4 h-4" />
+            Create Product
+          </Button>
+        </motion.div>
+      </motion.div>
 
       {/* Search and Filters */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-4">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -125,46 +255,324 @@ export function ProductsListPage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="gap-2">
+            <Button
+              variant={showFilters ? 'default' : 'outline'}
+              className={`gap-2 ${showFilters ? 'text-white' : ''}`}
+              style={showFilters ? { backgroundColor: '#F6511E' } : {}}
+              onClick={() => setShowFilters(!showFilters)}
+            >
               <Filter className="w-4 h-4" />
               Filters
+              {activeFilterCount > 0 && (
+                <Badge className="ml-1 bg-white text-[#F6511E] text-xs px-1.5">
+                  {activeFilterCount}
+                </Badge>
+              )}
             </Button>
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-gray-500">
+                <X className="w-4 h-4 mr-1" />
+                Clear all
+              </Button>
+            )}
           </div>
+
+          {/* Filter Dropdowns */}
+          {showFilters && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 pt-4 border-t">
+              {/* Occasion Filter */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-between w-full">
+                    <span className="truncate">
+                      {selectedOccasions.length > 0 ? `${selectedOccasions.length} selected` : 'Occasion'}
+                    </span>
+                    <ChevronDown className="w-4 h-4 ml-2 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3">
+                  <div className="space-y-2">
+                    {OCCASION_OPTIONS.map((occasion) => (
+                      <div key={occasion} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`occ-${occasion}`}
+                          checked={selectedOccasions.includes(occasion)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedOccasions([...selectedOccasions, occasion]);
+                            } else {
+                              setSelectedOccasions(selectedOccasions.filter((o) => o !== occasion));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`occ-${occasion}`} className="text-sm cursor-pointer">
+                          {occasion}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Gift Type Filter */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-between w-full">
+                    <span className="truncate">
+                      {selectedGiftTypes.length > 0 ? `${selectedGiftTypes.length} selected` : 'Gift Type'}
+                    </span>
+                    <ChevronDown className="w-4 h-4 ml-2 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3">
+                  <div className="space-y-2">
+                    {GIFT_TYPE_OPTIONS.map((giftType) => (
+                      <div key={giftType} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`gift-${giftType}`}
+                          checked={selectedGiftTypes.includes(giftType)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedGiftTypes([...selectedGiftTypes, giftType]);
+                            } else {
+                              setSelectedGiftTypes(selectedGiftTypes.filter((g) => g !== giftType));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`gift-${giftType}`} className="text-sm cursor-pointer">
+                          {giftType}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Price Filter */}
+              <Select
+                value={selectedPriceRange ? `${selectedPriceRange.min}-${selectedPriceRange.max}` : 'all'}
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    setSelectedPriceRange(null);
+                  } else {
+                    const range = PRICE_RANGES.find((r) => `${r.min}-${r.max}` === value);
+                    if (range) setSelectedPriceRange({ min: range.min, max: range.max });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Price" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Prices</SelectItem>
+                  {PRICE_RANGES.map((range) => (
+                    <SelectItem key={range.label} value={`${range.min}-${range.max}`}>
+                      {range.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Discounts Filter */}
+              <Select
+                value={selectedDiscount?.toString() || 'all'}
+                onValueChange={(value) => {
+                  setSelectedDiscount(value === 'all' ? null : parseInt(value));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Discounts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {DISCOUNT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value.toString()}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Made in Naija Filter */}
+              <Select
+                value={madeInNigeria === null ? 'all' : madeInNigeria.toString()}
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    setMadeInNigeria(null);
+                  } else {
+                    setMadeInNigeria(value === 'true');
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Made In Naija" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Products</SelectItem>
+                  <SelectItem value="true">Made in Nigeria 🇳🇬</SelectItem>
+                  <SelectItem value="false">International</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Delivery Date Filter */}
+              <Select
+                value={deliveryDays?.toString() || 'all'}
+                onValueChange={(value) => {
+                  setDeliveryDays(value === 'all' ? null : parseInt(value));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Delivery" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any Delivery Time</SelectItem>
+                  {DELIVERY_OPTIONS.map((option) => (
+                    <SelectItem key={option.days} value={option.days.toString()}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Category Filter */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-between w-full">
+                    <span className="truncate">
+                      {selectedCategories.length > 0 ? `${selectedCategories.length} categories` : 'Category'}
+                    </span>
+                    <ChevronDown className="w-4 h-4 ml-2 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3">
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {categories.map((cat) => (
+                      <div key={cat._id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`cat-${cat._id}`}
+                          checked={selectedCategories.includes(cat._id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedCategories([...selectedCategories, cat._id]);
+                            } else {
+                              setSelectedCategories(selectedCategories.filter((c) => c !== cat._id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`cat-${cat._id}`} className="text-sm cursor-pointer">
+                          {cat.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {/* Active Filter Tags */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {selectedOccasions.map((occ) => (
+                <Badge key={occ} variant="secondary" className="gap-1">
+                  {occ}
+                  <button onClick={() => setSelectedOccasions(selectedOccasions.filter((o) => o !== occ))}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+              {selectedGiftTypes.map((gt) => (
+                <Badge key={gt} variant="secondary" className="gap-1">
+                  {gt}
+                  <button onClick={() => setSelectedGiftTypes(selectedGiftTypes.filter((g) => g !== gt))}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+              {selectedPriceRange && (
+                <Badge variant="secondary" className="gap-1">
+                  {PRICE_RANGES.find((r) => r.min === selectedPriceRange.min)?.label}
+                  <button onClick={() => setSelectedPriceRange(null)}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {selectedDiscount !== null && (
+                <Badge variant="secondary" className="gap-1">
+                  {selectedDiscount}%+ off
+                  <button onClick={() => setSelectedDiscount(null)}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {madeInNigeria !== null && (
+                <Badge variant="secondary" className="gap-1">
+                  {madeInNigeria ? 'Made in Nigeria 🇳🇬' : 'International'}
+                  <button onClick={() => setMadeInNigeria(null)}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {deliveryDays !== null && (
+                <Badge variant="secondary" className="gap-1">
+                  Within {deliveryDays} days
+                  <button onClick={() => setDeliveryDays(null)}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Products Grid */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#4a3032' }} />
-        </div>
-      ) : products.length === 0 ? (
-        <Card className="border-0 shadow-sm">
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <p className="text-lg font-medium text-gray-900 mb-2">No products found</p>
-              <p className="text-sm text-gray-500 mb-6">
-                {searchQuery ? 'Try adjusting your search query' : 'Get started by creating your first product'}
-              </p>
-              {!searchQuery && (
-                <Button
-                  onClick={() => navigate('/create-product')}
-                  className="text-white"
-                  style={{ backgroundColor: '#4a3032' }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Product
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Card key={product._id} className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <ProductGridSkeleton count={6} />
+          </motion.div>
+        ) : products.length === 0 ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Card className="border-0 shadow-sm">
+              <CardContent className="py-12">
+                <div className="text-center">
+                  <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <p className="text-lg font-medium text-gray-900 mb-2">No products found</p>
+                  <p className="text-sm text-gray-500 mb-6">
+                    {searchQuery ? 'Try adjusting your search query' : 'Get started by creating your first product'}
+                  </p>
+                  {!searchQuery && (
+                    <Button
+                      onClick={() => navigate('/create-product')}
+                      className="text-white"
+                      style={{ backgroundColor: '#F6511E' }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Your First Product
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div key="products">
+            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map((product) => (
+                <StaggerItem key={product._id}>
+                  <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+                    <Card className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
                 {/* Product Image */}
                 <div className="relative aspect-square overflow-hidden bg-gray-100">
                   <img
@@ -182,6 +590,11 @@ export function ProductsListPage() {
                     {product.isBestSeller && (
                       <Badge className="bg-blue-100 text-blue-800 text-xs">
                         Best Seller
+                      </Badge>
+                    )}
+                    {product.isMadeInNigeria && (
+                      <Badge className="bg-green-100 text-green-800 text-xs">
+                        🇳🇬 Made in Nigeria
                       </Badge>
                     )}
                   </div>
@@ -211,15 +624,30 @@ export function ProductsListPage() {
                       <p className="text-xl font-bold text-gray-900">
                         ₦{product.basePrice.toLocaleString()}
                       </p>
-                      {product.compareAtPrice && (
-                        <p className="text-sm text-gray-400 line-through">
-                          ₦{product.compareAtPrice.toLocaleString()}
+                      {product.discountPercentage && product.discountPercentage > 0 && (
+                        <p className="text-sm font-medium" style={{ color: '#F6511E' }}>
+                          {product.discountPercentage}% off
                         </p>
                       )}
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {product.category.name}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1 justify-end max-w-[120px]">
+                      {product.categories && product.categories.length > 0 ? (
+                        product.categories.slice(0, 2).map((cat, idx) => (
+                          <Badge key={cat._id} variant="outline" className="text-xs">
+                            {cat.name}
+                          </Badge>
+                        ))
+                      ) : product.category ? (
+                        <Badge variant="outline" className="text-xs">
+                          {product.category.name}
+                        </Badge>
+                      ) : null}
+                      {product.categories && product.categories.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{product.categories.length - 2}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
@@ -259,39 +687,48 @@ export function ProductsListPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+                  </motion.div>
+                </StaggerItem>
+              ))}
+            </StaggerGrid>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Card className="border-0 shadow-sm mt-6">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-gray-600 px-4">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
-    </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="border-0 shadow-sm mt-6">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm text-gray-600 px-4">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </PageTransition>
   );
 }
