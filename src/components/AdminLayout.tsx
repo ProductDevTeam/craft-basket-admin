@@ -32,9 +32,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     if (path === '/dashboard') {
       return location.pathname === path;
     }
-    // For products, match /products, /products/:id, and /create-product
+    // For products, match /products, /products/:id, /create-product, and /edit-product/:id
     if (path === '/products') {
-      return location.pathname.startsWith('/products') || location.pathname === '/create-product';
+      return (
+        location.pathname.startsWith('/products') ||
+        location.pathname === '/create-product' ||
+        location.pathname.startsWith('/edit-product')
+      );
     }
     // Default exact match for other routes
     return location.pathname === path;

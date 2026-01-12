@@ -106,6 +106,13 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  async updateProduct(id: string, formData: FormData): Promise<ApiResponse<unknown>> {
+    return this.request(`/products/${id}`, {
+      method: 'PUT',
+      body: formData,
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
