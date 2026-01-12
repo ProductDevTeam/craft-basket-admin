@@ -100,6 +100,12 @@ class ApiClient {
 
     return this.request(`/admin/activity-logs?${queryParams.toString()}`);
   }
+
+  async deleteProduct(id: string): Promise<ApiResponse<null>> {
+    return this.request(`/products/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

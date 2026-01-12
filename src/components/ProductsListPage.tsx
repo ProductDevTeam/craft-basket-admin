@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Loader2, Eye, Edit, Trash2, Filter, Package, Users, X, ChevronDown } from 'lucide-react';
+import { Plus, Search, Loader2, Eye, Edit, Trash2, Filter, Package, Users, X, ChevronDown, ArrowLeft, User } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, Category } from '@/types';
@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { motion, AnimatePresence, PageTransition, StaggerGrid, StaggerItem, staggerItem } from '@/lib/motion';
 import { ProductGridSkeleton, PageHeaderSkeleton } from '@/components/ui/skeletons';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Product {
   _id: string;
@@ -77,12 +78,18 @@ const DELIVERY_OPTIONS = [
 
 export function ProductsListPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [vendorFilter, setVendorFilter] = useState<string | null>(null);
+  const [vendorName, setVendorName] = useState<string>('');
 
   // Filter state
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
@@ -102,6 +109,7 @@ export function ProductsListPage() {
     selectedDiscount !== null,
     madeInNigeria !== null,
     deliveryDays !== null,
+    vendorFilter !== null,
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
@@ -112,15 +120,31 @@ export function ProductsListPage() {
     setSelectedDiscount(null);
     setMadeInNigeria(null);
     setDeliveryDays(null);
+    clearVendorFilter();
+  };
+
+  const clearVendorFilter = () => {
+    setVendorFilter(null);
+    setVendorName('');
+    // Remove vendor parameter from URL
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('vendor');
+    setSearchParams(newParams);
   };
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  // Handle vendor filter from URL parameter
+  useEffect(() => {
+    const vendorParam = searchParams.get('vendor');
+    setVendorFilter(vendorParam);
+  }, [searchParams]);
+
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, searchQuery, selectedOccasions, selectedGiftTypes, selectedCategories, selectedPriceRange, selectedDiscount, madeInNigeria, deliveryDays]);
+  }, [currentPage, searchQuery, selectedOccasions, selectedGiftTypes, selectedCategories, selectedPriceRange, selectedDiscount, madeInNigeria, deliveryDays, vendorFilter]);
 
   const fetchCategories = async () => {
     try {
@@ -145,6 +169,16 @@ export function ProductsListPage() {
         let filteredProducts = Array.isArray(response.data) ? response.data : [];
 
         // Apply client-side filters
+        // Filter by vendor if vendorFilter is set
+        if (vendorFilter) {
+          filteredProducts = filteredProducts.filter((p: Product) => p.vendor._id === vendorFilter);
+          // Set vendor name from the first product for display
+          if (filteredProducts.length > 0) {
+            const vendor = filteredProducts[0].vendor;
+            setVendorName(vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`);
+          }
+        }
+
         if (selectedOccasions.length > 0) {
           filteredProducts = filteredProducts.filter((p: Product) =>
             p.occasion?.some((o: string) => selectedOccasions.includes(o))
@@ -212,6 +246,30 @@ export function ProductsListPage() {
     return main?.url || product.images[0]?.url || '/placeholder-product.png';
   };
 
+  const handleDeleteClick = (productId: string, productName: string) => {
+    setProductToDelete({ id: productId, name: productName });
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!productToDelete) return;
+
+    try {
+      setDeletingProductId(productToDelete.id);
+      await apiClient.deleteProduct(productToDelete.id);
+      toast.success('Product deleted successfully');
+      // Remove the product from the list
+      setProducts((prev) => prev.filter((p) => p._id !== productToDelete.id));
+      setShowDeleteDialog(false);
+      setProductToDelete(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete product';
+      toast.error(errorMessage);
+    } finally {
+      setDeletingProductId(null);
+    }
+  };
+
   return (
     <PageTransition className="space-y-6">
       {/* Header */}
@@ -222,21 +280,45 @@ export function ProductsListPage() {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+            {vendorFilter && vendorName && (
+              <Badge variant="outline" className="text-sm px-3 py-1 flex items-center gap-2">
+                <User className="w-3 h-3" />
+                {vendorName}
+                <X
+                  className="w-3 h-3 cursor-pointer hover:text-red-600"
+                  onClick={clearVendorFilter}
+                />
+              </Badge>
+            )}
+          </div>
           <p className="text-gray-600 mt-1">
-            Manage and view all products in your marketplace
+            {vendorFilter
+              ? `Viewing products from ${vendorName}`
+              : 'Manage and view all products in your marketplace'}
           </p>
         </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button
-            onClick={() => navigate('/create-product')}
-            className="text-white gap-2"
-            style={{ backgroundColor: '#F6511E' }}
-          >
-            <Plus className="w-4 h-4" />
-            Create Product
-          </Button>
-        </motion.div>
+        <div className="flex items-center gap-2">
+          {vendorFilter && (
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button variant="outline" onClick={clearVendorFilter}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                All Products
+              </Button>
+            </motion.div>
+          )}
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              onClick={() => navigate('/create-product')}
+              className="text-white gap-2"
+              style={{ backgroundColor: '#F6511E' }}
+            >
+              <Plus className="w-4 h-4" />
+              Create Product
+            </Button>
+          </motion.div>
+        </div>
       </motion.div>
 
       {/* Search and Filters */}
@@ -681,8 +763,17 @@ export function ProductsListPage() {
                       size="sm"
                       variant="ghost"
                       className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(product._id, product.name);
+                      }}
+                      disabled={deletingProductId === product._id}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingProductId === product._id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -729,6 +820,22 @@ export function ProductsListPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Product"
+        description={
+          productToDelete
+            ? `Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone and will permanently remove the product from your store.`
+            : ''
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        variant="destructive"
+        isLoading={deletingProductId !== null}
+      />
     </PageTransition>
   );
 }
