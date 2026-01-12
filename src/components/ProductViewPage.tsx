@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
+import { ProductViewPageSkeleton } from '@/components/ui/skeletons';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Product {
   _id: string;
@@ -80,6 +82,8 @@ export function ProductViewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [mediaType, setMediaType] = useState<'images' | 'videos'>('images');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -144,12 +148,28 @@ export function ProductViewPage() {
     );
   };
 
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!product) return;
+
+    try {
+      setIsDeleting(true);
+      await apiClient.deleteProduct(id!);
+      toast.success('Product deleted successfully');
+      setShowDeleteDialog(false);
+      navigate('/products');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete product';
+      toast.error(errorMessage);
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#F6511E' }} />
-      </div>
-    );
+    return <ProductViewPageSkeleton />;
   }
 
   if (!product) {
@@ -171,7 +191,13 @@ export function ProductViewPage() {
             <Edit className="w-4 h-4 mr-2" />
             Edit
           </Button>
-          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600 hover:text-red-700"
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
+          >
             <Trash2 className="w-4 h-4 mr-2" />
             Delete
           </Button>
@@ -488,6 +514,18 @@ export function ProductViewPage() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Product"
+        description={`Are you sure you want to delete "${product.name}"? This action cannot be undone and will permanently remove the product from your store.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        variant="destructive"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

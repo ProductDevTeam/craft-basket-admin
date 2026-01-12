@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 import { Vendor, Category, KeyInfo, PersonalizationType, OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, PERSONALIZATION_TYPE_OPTIONS } from '../types';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ const STEPS = [
 
 export function CreateProductPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -142,6 +143,18 @@ export function CreateProductPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Set vendor from URL parameter if present
+  useEffect(() => {
+    const vendorParam = searchParams.get('vendor');
+    if (vendorParam && vendors.length > 0) {
+      // Verify the vendor exists in the vendors list
+      const vendorExists = vendors.some(v => v._id === vendorParam);
+      if (vendorExists) {
+        setVendorId(vendorParam);
+      }
+    }
+  }, [searchParams, vendors]);
 
   // Scroll to top when navigating between steps so the next step starts at the top
   useEffect(() => {
