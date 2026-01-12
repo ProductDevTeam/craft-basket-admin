@@ -756,6 +756,7 @@ export function ProductsListPage() {
                       size="sm"
                       variant="ghost"
                       className="hover:bg-gray-100"
+                      onClick={() => navigate(`/edit-product/${product._id}`)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>

@@ -35,6 +35,7 @@ function AdminContent() {
         <Route path="/products" element={<ProductsListPage />} />
         <Route path="/products/:id" element={<ProductViewPage />} />
         <Route path="/create-product" element={<CreateProductPage />} />
+        <Route path="/edit-product/:id" element={<CreateProductPage />} />
         <Route path="/vendors" element={<VendorsPage />} />
       </Routes>
     </AdminLayout>

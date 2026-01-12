@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 import { Vendor, Category, KeyInfo, PersonalizationType, OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, PERSONALIZATION_TYPE_OPTIONS } from '../types';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,8 @@ const STEPS = [
 export function CreateProductPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = Boolean(id);
   const [currentStep, setCurrentStep] = useState(1);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -35,6 +37,8 @@ export function CreateProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<Array<{ url: string; publicId: string; isMain: boolean }>>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
   // Form state
   const [vendorId, setVendorId] = useState('');
@@ -133,28 +137,62 @@ export function CreateProductPage() {
       if (categoriesRes.success && categoriesRes.data) {
         setCategories(categoriesRes.data);
       }
+
+      // Load product data if in edit mode
+      if (isEditMode && id) {
+        const productRes = await apiClient.getProduct(id);
+        if (productRes.success && productRes.data) {
+          const product = productRes.data as any;
+
+          // Populate form fields
+          setVendorId(product.vendor?._id || product.vendor || '');
+          setName(product.name || '');
+          setDescription(product.description || '');
+          setShortDescription(product.shortDescription || '');
+          setSelectedCategories(product.categories?.map((c: any) => c._id || c) || (product.category ? [product.category._id || product.category] : []));
+          setSelectedOccasions(product.occasion || []);
+          setSelectedGiftTypes(product.giftType || []);
+          setBasePrice(product.basePrice?.toString() || '');
+          setDiscountPercentage(product.discountPercentage?.toString() || '');
+          setWeight(product.weight || '');
+          setColor(product.color || '');
+          setMaterials(product.materials || []);
+          setKeyInfo(product.keyInfo || []);
+          setPersonalizationType(product.personalizationType || 'none');
+          setEstimatedDeliveryDays(product.estimatedDeliveryDays?.toString() || '');
+          setIsBestSeller(product.isBestSeller || false);
+          setIsFeatured(product.isFeatured || false);
+          setIsMadeInNigeria(product.isMadeInNigeria || false);
+          setStock(product.stock?.toString() || '0');
+          setSku(product.sku || '');
+          setTags(product.tags || []);
+          setExistingImages(product.images || []);
+        }
+      }
     } catch (error) {
-      toast.error('Failed to load data');
+      toast.error(isEditMode ? 'Failed to load product' : 'Failed to load data');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isEditMode, id]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Set vendor from URL parameter if present
+  // Set vendor from URL parameter if present (only in create mode)
   useEffect(() => {
-    const vendorParam = searchParams.get('vendor');
-    if (vendorParam && vendors.length > 0) {
-      // Verify the vendor exists in the vendors list
-      const vendorExists = vendors.some(v => v._id === vendorParam);
-      if (vendorExists) {
-        setVendorId(vendorParam);
+    if (!isEditMode) {
+      const vendorParam = searchParams.get('vendor');
+      if (vendorParam && vendors.length > 0) {
+        // Verify the vendor exists in the vendors list
+        const vendorExists = vendors.some(v => v._id === vendorParam);
+        if (vendorExists) {
+          setVendorId(vendorParam);
+        }
       }
     }
-  }, [searchParams, vendors]);
+  }, [searchParams, vendors, isEditMode]);
 
   // Scroll to top when navigating between steps so the next step starts at the top
   useEffect(() => {
@@ -288,10 +326,20 @@ export function CreateProductPage() {
         }
         return true;
       case 2:
-        if (images.length === 0) {
-          markStepTouched(2);
-          toast.error('Please upload at least one product image');
-          return false;
+        // In edit mode, allow if there are existing images
+        if (isEditMode) {
+          if (images.length === 0 && existingImages.length === 0) {
+            markStepTouched(2);
+            toast.error('Please keep at least one product image or upload new ones');
+            return false;
+          }
+        } else {
+          // In create mode, require at least one image
+          if (images.length === 0) {
+            markStepTouched(2);
+            toast.error('Please upload at least one product image');
+            return false;
+          }
         }
         return true;
       case 3:
@@ -379,18 +427,28 @@ export function CreateProductPage() {
         formData.append('mainVideoIndex', String(mainVideoIndex));
       }
 
-      await apiClient.createProduct(formData);
+      // Add images to delete for edit mode
+      if (isEditMode && imagesToDelete.length > 0) {
+        formData.append('deleteImages', JSON.stringify(imagesToDelete));
+      }
+
+      // Call appropriate API method
+      if (isEditMode) {
+        await apiClient.updateProduct(id!, formData);
+      } else {
+        await apiClient.createProduct(formData);
+      }
 
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      toast.success('Product created successfully!');
+      toast.success(isEditMode ? 'Product updated successfully!' : 'Product created successfully!');
       setTimeout(() => {
         navigate('/products');
       }, 500);
     } catch (error) {
       setUploadProgress(0);
-      toast.error(error instanceof Error ? error.message : 'Failed to create product');
+      toast.error(error instanceof Error ? error.message : `Failed to ${isEditMode ? 'update' : 'create'} product`);
     } finally {
       setIsSubmitting(false);
     }
@@ -415,9 +473,11 @@ export function CreateProductPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <h1 className="text-3xl font-bold text-gray-900">Create Product</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{isEditMode ? 'Edit Product' : 'Create Product'}</h1>
         <p className="text-gray-600 mt-1">
-          Create a product on behalf of a vendor. The product will be auto-approved.
+          {isEditMode
+            ? 'Update product information and media files.'
+            : 'Create a product on behalf of a vendor. The product will be auto-approved.'}
         </p>
       </motion.div>
 
@@ -719,8 +779,30 @@ export function CreateProductPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                  {/* Existing images in edit mode */}
+                  {existingImages.map((img, index) => (
+                    <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                      <img src={img.url} alt={`Existing ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagesToDelete([...imagesToDelete, img.publicId]);
+                          setExistingImages(existingImages.filter((_, i) => i !== index));
+                        }}
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      {img.isMain && (
+                        <span className="absolute bottom-1 left-1 text-xs text-white px-2 py-0.5 rounded" style={{ backgroundColor: '#F6511E' }}>
+                          Main
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {/* New images to upload */}
                   {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                    <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
                       <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                       <button
                         type="button"
@@ -729,11 +811,14 @@ export function CreateProductPage() {
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      {index === 0 && (
+                      {!isEditMode && index === 0 && existingImages.length === 0 && (
                         <span className="absolute bottom-1 left-1 text-xs text-white px-2 py-0.5 rounded" style={{ backgroundColor: '#F6511E' }}>
                           Main
                         </span>
                       )}
+                      <span className="absolute bottom-1 right-1 text-xs bg-blue-500 text-white px-2 py-0.5 rounded">
+                        New
+                      </span>
                     </div>
                   ))}
                   {images.length < 10 && (
