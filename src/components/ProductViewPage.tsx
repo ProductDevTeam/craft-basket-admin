@@ -35,11 +35,13 @@ interface Product {
   basePrice: number;
   compareAtPrice?: number;
   discountPercentage?: number;
-  category: {
+  category?: {
     _id: string;
     name: string;
     slug: string;
   };
+  occasion?: string[];
+  giftType?: string[];
   vendor: {
     _id: string;
     firstName: string;
@@ -64,6 +66,8 @@ interface Product {
   isActive: boolean;
   isFeatured: boolean;
   isBestSeller: boolean;
+  isMadeInNigeria?: boolean;
+  personalizationType?: 'none' | 'engraving' | 'sticker' | 'print-on';
   approvalStatus: 'pending' | 'approved' | 'rejected';
   materials?: string[];
   weight?: string;
@@ -358,7 +362,9 @@ export function ProductViewPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-2xl mb-2">{product.name}</CardTitle>
-                  <CardDescription>{product.category.name}</CardDescription>
+                  <CardDescription>
+                    {[...(product.occasion || []), ...(product.giftType || [])].slice(0, 3).join(' • ') || 'No tags'}
+                  </CardDescription>
                 </div>
                 {getStatusBadge(product.approvalStatus)}
               </div>
@@ -439,13 +445,52 @@ export function ProductViewPage() {
                     <span className="font-medium">Best Seller</span>
                   </div>
                 )}
-                {product.isPersonalizable && (
+                {product.isMadeInNigeria && (
                   <div className="flex items-center gap-2 text-sm text-green-700">
+                    <span className="text-base">🇳🇬</span>
+                    <span className="font-medium">Made in Nigeria</span>
+                  </div>
+                )}
+                {product.personalizationType && product.personalizationType !== 'none' && (
+                  <div className="flex items-center gap-2 text-sm text-orange-700">
                     <Edit className="w-4 h-4" />
-                    <span className="font-medium">Personalizable</span>
+                    <span className="font-medium capitalize">{product.personalizationType} Available</span>
                   </div>
                 )}
               </div>
+
+              {/* Occasion & Gift Type Tags */}
+              {((product.occasion && product.occasion.length > 0) || (product.giftType && product.giftType.length > 0)) && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    {product.occasion && product.occasion.length > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Occasions</p>
+                        <div className="flex flex-wrap gap-1">
+                          {product.occasion.map((occ) => (
+                            <Badge key={occ} variant="secondary" className="text-xs">
+                              {occ}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {product.giftType && product.giftType.length > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Gift Types</p>
+                        <div className="flex flex-wrap gap-1">
+                          {product.giftType.map((gt) => (
+                            <Badge key={gt} variant="secondary" className="text-xs">
+                              {gt}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 

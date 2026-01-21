@@ -1,4 +1,4 @@
-import { ApiResponse, Vendor, Category, User, DashboardStats } from '../types';
+import { ApiResponse, Vendor, User, DashboardStats } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -49,10 +49,6 @@ class ApiClient {
 
   async getVendors(): Promise<ApiResponse<Vendor[]>> {
     return this.request('/admin/vendors');
-  }
-
-  async getCategories(): Promise<ApiResponse<Category[]>> {
-    return this.request('/admin/categories');
   }
 
   async createProduct(formData: FormData): Promise<ApiResponse<unknown>> {
@@ -112,6 +108,10 @@ class ApiClient {
       method: 'PUT',
       body: formData,
     });
+  }
+
+  async generateSku(vendorId: string): Promise<ApiResponse<{ sku: string }>> {
+    return this.request(`/admin/vendors/${vendorId}/generate-sku`);
   }
 }
 
