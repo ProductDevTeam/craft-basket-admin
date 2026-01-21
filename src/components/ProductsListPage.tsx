@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, Loader2, Eye, Edit, Trash2, Filter, Package, Users, X, ChevronDown, ArrowLeft, User } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
-import { OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, Category } from '@/types';
+import { OCCASION_OPTIONS, GIFT_TYPE_OPTIONS } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { motion, AnimatePresence, PageTransition, StaggerGrid, StaggerItem, staggerItem } from '@/lib/motion';
@@ -22,14 +22,6 @@ interface Product {
   basePrice: number;
   discountPercentage?: number;
   compareAtPrice?: number;
-  categories?: Array<{
-    _id: string;
-    name: string;
-  }>;
-  category?: {
-    _id: string;
-    name: string;
-  };
   occasion?: string[];
   giftType?: string[];
   vendor: {
@@ -80,7 +72,6 @@ export function ProductsListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,7 +85,6 @@ export function ProductsListPage() {
   // Filter state
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [selectedGiftTypes, setSelectedGiftTypes] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number; max: number } | null>(null);
   const [selectedDiscount, setSelectedDiscount] = useState<number | null>(null);
   const [madeInNigeria, setMadeInNigeria] = useState<boolean | null>(null);
@@ -104,7 +94,6 @@ export function ProductsListPage() {
   const activeFilterCount = [
     selectedOccasions.length > 0,
     selectedGiftTypes.length > 0,
-    selectedCategories.length > 0,
     selectedPriceRange !== null,
     selectedDiscount !== null,
     madeInNigeria !== null,
@@ -115,7 +104,6 @@ export function ProductsListPage() {
   const clearAllFilters = () => {
     setSelectedOccasions([]);
     setSelectedGiftTypes([]);
-    setSelectedCategories([]);
     setSelectedPriceRange(null);
     setSelectedDiscount(null);
     setMadeInNigeria(null);
@@ -132,10 +120,6 @@ export function ProductsListPage() {
     setSearchParams(newParams);
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   // Handle vendor filter from URL parameter
   useEffect(() => {
     const vendorParam = searchParams.get('vendor');
@@ -144,18 +128,7 @@ export function ProductsListPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, searchQuery, selectedOccasions, selectedGiftTypes, selectedCategories, selectedPriceRange, selectedDiscount, madeInNigeria, deliveryDays, vendorFilter]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await apiClient.getCategories();
-      if (response.success && response.data) {
-        setCategories(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to load categories', err);
-    }
-  };
+  }, [currentPage, searchQuery, selectedOccasions, selectedGiftTypes, selectedPriceRange, selectedDiscount, madeInNigeria, deliveryDays, vendorFilter]);
 
   const fetchProducts = async () => {
     try {
@@ -187,12 +160,6 @@ export function ProductsListPage() {
         if (selectedGiftTypes.length > 0) {
           filteredProducts = filteredProducts.filter((p: Product) =>
             p.giftType?.some((g: string) => selectedGiftTypes.includes(g))
-          );
-        }
-        if (selectedCategories.length > 0) {
-          filteredProducts = filteredProducts.filter((p: Product) =>
-            p.categories?.some((c) => selectedCategories.includes(c._id)) ||
-            (p.category && selectedCategories.includes(p.category._id))
           );
         }
         if (selectedPriceRange) {
@@ -361,7 +328,7 @@ export function ProductsListPage() {
 
           {/* Filter Dropdowns */}
           {showFilters && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 pt-4 border-t">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-4 border-t">
               {/* Occasion Filter */}
               <Popover>
                 <PopoverTrigger asChild>
@@ -516,39 +483,6 @@ export function ProductsListPage() {
                 </SelectContent>
               </Select>
 
-              {/* Category Filter */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="justify-between w-full">
-                    <span className="truncate">
-                      {selectedCategories.length > 0 ? `${selectedCategories.length} categories` : 'Category'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 ml-2 shrink-0" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-3">
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {categories.map((cat) => (
-                      <div key={cat._id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`cat-${cat._id}`}
-                          checked={selectedCategories.includes(cat._id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedCategories([...selectedCategories, cat._id]);
-                            } else {
-                              setSelectedCategories(selectedCategories.filter((c) => c !== cat._id));
-                            }
-                          }}
-                        />
-                        <label htmlFor={`cat-${cat._id}`} className="text-sm cursor-pointer">
-                          {cat.name}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
             </div>
           )}
 
@@ -689,7 +623,7 @@ export function ProductsListPage() {
 
                 <CardContent className="p-4">
                   {/* Product Info */}
-                  <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 min-h-[48px]">
+                  <h3 className="font-semibold text-gray-900 truncate mb-2" title={product.name}>
                     {product.name}
                   </h3>
 
@@ -713,20 +647,14 @@ export function ProductsListPage() {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-1 justify-end max-w-[120px]">
-                      {product.categories && product.categories.length > 0 ? (
-                        product.categories.slice(0, 2).map((cat, idx) => (
-                          <Badge key={cat._id} variant="outline" className="text-xs">
-                            {cat.name}
-                          </Badge>
-                        ))
-                      ) : product.category ? (
-                        <Badge variant="outline" className="text-xs">
-                          {product.category.name}
+                      {[...(product.occasion || []), ...(product.giftType || [])].slice(0, 2).map((tag, idx) => (
+                        <Badge key={`${tag}-${idx}`} variant="outline" className="text-xs">
+                          {tag}
                         </Badge>
-                      ) : null}
-                      {product.categories && product.categories.length > 2 && (
+                      ))}
+                      {[...(product.occasion || []), ...(product.giftType || [])].length > 2 && (
                         <Badge variant="outline" className="text-xs">
-                          +{product.categories.length - 2}
+                          +{[...(product.occasion || []), ...(product.giftType || [])].length - 2}
                         </Badge>
                       )}
                     </div>

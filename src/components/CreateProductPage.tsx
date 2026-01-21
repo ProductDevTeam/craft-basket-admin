@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { apiClient } from '../lib/api';
-import { Vendor, Category, KeyInfo, PersonalizationType, OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, PERSONALIZATION_TYPE_OPTIONS } from '../types';
+import { Vendor, KeyInfo, PersonalizationType, OCCASION_OPTIONS, GIFT_TYPE_OPTIONS, PERSONALIZATION_TYPE_OPTIONS } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,13 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Plus, X, Upload, HelpCircle, Info, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Loader2, Plus, X, Upload, HelpCircle, Info, Check, ArrowLeft, ArrowRight, ChevronsUpDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, PageTransition } from '@/lib/motion';
 import { FormSkeleton } from '@/components/ui/skeletons';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const STEPS = [
   { id: 1, name: 'Basic Info', description: 'Product details' },
@@ -32,20 +33,18 @@ export function CreateProductPage() {
   const isEditMode = Boolean(id);
   const [currentStep, setCurrentStep] = useState(1);
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<Array<{ url: string; publicId: string; isMain: boolean }>>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [vendorSearchOpen, setVendorSearchOpen] = useState(false);
 
   // Form state
   const [vendorId, setVendorId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [shortDescription, setShortDescription] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [selectedGiftTypes, setSelectedGiftTypes] = useState<string[]>([]);
   const [basePrice, setBasePrice] = useState('');
@@ -54,7 +53,7 @@ export function CreateProductPage() {
   const [color, setColor] = useState('');
   const [materials, setMaterials] = useState<string[]>([]);
   const [materialInput, setMaterialInput] = useState('');
-  const [keyInfo, setKeyInfo] = useState<KeyInfo[]>([]);
+  const [keyInfo, setKeyInfo] = useState<KeyInfo[]>([{ label: '', value: '' }]);
   const [personalizationType, setPersonalizationType] = useState<PersonalizationType>('none');
   const [estimatedDeliveryDays, setEstimatedDeliveryDays] = useState('');
   const [isBestSeller, setIsBestSeller] = useState(false);
@@ -84,7 +83,7 @@ export function CreateProductPage() {
   const markStepTouched = (step: number) => {
     switch (step) {
       case 1:
-        setTouched((prev) => ({ ...prev, vendorId: true, name: true, description: true, categories: true, sku: true }));
+        setTouched((prev) => ({ ...prev, vendorId: true, name: true, description: true, sku: true, giftTypes: true, occasions: true }));
         break;
       case 2:
         setTouched((prev) => ({ ...prev, images: true }));
@@ -95,15 +94,6 @@ export function CreateProductPage() {
       default:
         break;
     }
-  };
-
-  // Toggle category selection
-  const toggleCategory = (categoryId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
   };
 
   // Toggle occasion selection
@@ -126,16 +116,10 @@ export function CreateProductPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [vendorsRes, categoriesRes] = await Promise.all([
-        apiClient.getVendors(),
-        apiClient.getCategories(),
-      ]);
+      const vendorsRes = await apiClient.getVendors();
 
       if (vendorsRes.success && vendorsRes.data) {
         setVendors(vendorsRes.data);
-      }
-      if (categoriesRes.success && categoriesRes.data) {
-        setCategories(categoriesRes.data);
       }
 
       // Load product data if in edit mode
@@ -148,8 +132,6 @@ export function CreateProductPage() {
           setVendorId(product.vendor?._id || product.vendor || '');
           setName(product.name || '');
           setDescription(product.description || '');
-          setShortDescription(product.shortDescription || '');
-          setSelectedCategories(product.categories?.map((c: any) => c._id || c) || (product.category ? [product.category._id || product.category] : []));
           setSelectedOccasions(product.occasion || []);
           setSelectedGiftTypes(product.giftType || []);
           setBasePrice(product.basePrice?.toString() || '');
@@ -157,7 +139,7 @@ export function CreateProductPage() {
           setWeight(product.weight || '');
           setColor(product.color || '');
           setMaterials(product.materials || []);
-          setKeyInfo(product.keyInfo || []);
+          setKeyInfo(product.keyInfo?.length > 0 ? product.keyInfo : [{ label: '', value: '' }]);
           setPersonalizationType(product.personalizationType || 'none');
           setEstimatedDeliveryDays(product.estimatedDeliveryDays?.toString() || '');
           setIsBestSeller(product.isBestSeller || false);
@@ -175,6 +157,29 @@ export function CreateProductPage() {
       setIsLoading(false);
     }
   }, [isEditMode, id]);
+
+  // Generate SKU when vendor is selected (only in create mode)
+  const generateSku = useCallback(async (selectedVendorId: string) => {
+    if (!selectedVendorId || isEditMode) return;
+
+    try {
+      const response = await apiClient.generateSku(selectedVendorId);
+      if (response.success && response.data?.sku) {
+        setSku(response.data.sku);
+      }
+    } catch (error) {
+      console.error('Failed to generate SKU:', error);
+    }
+  }, [isEditMode]);
+
+  // Handle vendor selection change
+  const handleVendorChange = (newVendorId: string) => {
+    setVendorId(newVendorId);
+    setVendorSearchOpen(false);
+    if (!isEditMode) {
+      generateSku(newVendorId);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -289,8 +294,6 @@ export function CreateProductPage() {
     setVendorId('');
     setName('');
     setDescription('');
-    setShortDescription('');
-    setSelectedCategories([]);
     setSelectedOccasions([]);
     setSelectedGiftTypes([]);
     setBasePrice('');
@@ -299,7 +302,7 @@ export function CreateProductPage() {
     setColor('');
     setMaterials([]);
     setMaterialInput('');
-    setKeyInfo([]);
+    setKeyInfo([{ label: '', value: '' }]);
     setPersonalizationType('none');
     setEstimatedDeliveryDays('');
     setIsBestSeller(false);
@@ -319,9 +322,14 @@ export function CreateProductPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        if (!vendorId || !name || !description || selectedCategories.length === 0 || !sku) {
+        if (!vendorId || !name || !description || !sku) {
           markStepTouched(1);
           toast.error('Please fill in all required fields');
+          return false;
+        }
+        if (selectedGiftTypes.length === 0 && selectedOccasions.length === 0) {
+          markStepTouched(1);
+          toast.error('Please select at least one Gift Type or Occasion');
           return false;
         }
         return true;
@@ -394,8 +402,6 @@ export function CreateProductPage() {
       formData.append('vendorId', vendorId);
       formData.append('name', name);
       formData.append('description', description);
-      if (shortDescription) formData.append('shortDescription', shortDescription);
-      formData.append('categories', JSON.stringify(selectedCategories));
       if (selectedOccasions.length) formData.append('occasion', JSON.stringify(selectedOccasions));
       if (selectedGiftTypes.length) formData.append('giftType', JSON.stringify(selectedGiftTypes));
       formData.append('basePrice', basePrice);
@@ -538,7 +544,20 @@ export function CreateProductPage() {
       </Card>
       </motion.div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        onKeyDown={(e) => {
+          // Prevent Enter key from submitting form unless on last step
+          if (e.key === 'Enter' && currentStep < STEPS.length) {
+            const target = e.target as HTMLElement;
+            // Allow Enter in textareas
+            if (target.tagName !== 'TEXTAREA') {
+              e.preventDefault();
+            }
+          }
+        }}
+      >
         <AnimatePresence mode="wait">
         {/* Step 1: Basic Information */}
         {currentStep === 1 && (
@@ -556,35 +575,88 @@ export function CreateProductPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Vendor Dropdown with Search */}
                 <div className="space-y-2">
                   <Label htmlFor="vendor">Vendor *</Label>
-                  <Select value={vendorId} onValueChange={setVendorId}>
-                    <SelectTrigger
-                      onBlur={() => setTouchedField('vendorId')}
-                      className={!vendorId && (isSubmitting || touched.vendorId) ? 'border-red-500 ring-1 ring-red-500' : ''}
-                    >
-                      <SelectValue placeholder="Select a vendor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vendors.map((vendor) => (
-                        <SelectItem key={vendor._id} value={vendor._id}>
-                          {vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`} ({vendor.email})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={vendorSearchOpen} onOpenChange={setVendorSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={vendorSearchOpen}
+                        onBlur={() => setTouchedField('vendorId')}
+                        className={cn(
+                          "w-full justify-between font-normal",
+                          !vendorId && "text-muted-foreground",
+                          !vendorId && (isSubmitting || touched.vendorId) && 'border-red-500 ring-1 ring-red-500'
+                        )}
+                      >
+                        {vendorId
+                          ? (() => {
+                              const vendor = vendors.find((v) => v._id === vendorId);
+                              return vendor
+                                ? `${vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`}`
+                                : "Select a vendor";
+                            })()
+                          : "Select a vendor"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search vendors..." />
+                        <CommandList>
+                          <CommandEmpty>No vendor found.</CommandEmpty>
+                          <CommandGroup>
+                            {vendors.map((vendor) => (
+                              <CommandItem
+                                key={vendor._id}
+                                value={`${vendor.vendorInfo?.businessName || ''} ${vendor.firstName} ${vendor.lastName} ${vendor.email}`}
+                                onSelect={() => handleVendorChange(vendor._id)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    vendorId === vendor._id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">{vendor.email}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   {!vendorId && (isSubmitting || touched.vendorId) && (
                     <p className="text-sm text-red-600 mt-1">Vendor is required</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sku">SKU *</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="sku">SKU *</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Auto-generated when you select a vendor. You can modify it if needed.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id="sku"
                     value={sku}
                     onChange={(e) => setSku(e.target.value)}
                     onBlur={() => setTouchedField('sku')}
-                    placeholder="e.g., EB-001"
+                    placeholder={vendorId ? "Generating..." : "Select a vendor first"}
                     className={!sku && (isSubmitting || touched.sku) ? 'border-red-500 ring-1 ring-red-500' : ''}
                   />
                   {!sku && (isSubmitting || touched.sku) && (
@@ -593,105 +665,61 @@ export function CreateProductPage() {
                 </div>
               </div>
 
-              {/* Categories - Multi-select */}
+              {/* Occasions - Multi-select with Chips */}
               <div className="space-y-2">
-                <Label>Categories * <span className="text-gray-500 font-normal">(Select one or more)</span></Label>
-                <div
-                  className={cn(
-                    'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 border rounded-lg',
-                    selectedCategories.length === 0 && (isSubmitting || touched.categories) ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
-                  )}
-                >
-                  {categories.map((cat) => (
-                    <div key={cat._id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`cat-${cat._id}`}
-                        checked={selectedCategories.includes(cat._id)}
-                        onCheckedChange={() => {
-                          toggleCategory(cat._id);
-                          setTouchedField('categories');
-                        }}
-                      />
-                      <label
-                        htmlFor={`cat-${cat._id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {cat.name}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                {selectedCategories.length === 0 && (isSubmitting || touched.categories) && (
-                  <p className="text-sm text-red-600 mt-1">Please select at least one category</p>
-                )}
-                {selectedCategories.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedCategories.map((catId) => {
-                      const cat = categories.find((c) => c._id === catId);
-                      return cat ? (
-                        <span
-                          key={catId}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm"
-                          style={{ backgroundColor: '#fef3e7', color: '#F6511E' }}
-                        >
-                          {cat.name}
-                          <button
-                            type="button"
-                            onClick={() => toggleCategory(catId)}
-                            className="hover:text-red-500"
-                            style={{ color: '#F6511E' }}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Occasions - Multi-select */}
-              <div className="space-y-2">
-                <Label>Occasion <span className="text-gray-500 font-normal">(Optional - helps with filtering)</span></Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 border border-gray-200 rounded-lg">
+                <Label>Occasion * <span className="text-gray-500 font-normal">(Select at least one occasion or gift type)</span></Label>
+                <div className="flex flex-wrap gap-2">
                   {OCCASION_OPTIONS.map((occasion) => (
-                    <div key={occasion} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`occ-${occasion}`}
-                        checked={selectedOccasions.includes(occasion)}
-                        onCheckedChange={() => toggleOccasion(occasion)}
-                      />
-                      <label
-                        htmlFor={`occ-${occasion}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {occasion}
-                      </label>
-                    </div>
+                    <button
+                      key={occasion}
+                      type="button"
+                      onClick={() => {
+                        toggleOccasion(occasion);
+                        setTouchedField('occasions');
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-sm font-medium transition-colors border",
+                        selectedOccasions.includes(occasion)
+                          ? "border-transparent text-white"
+                          : "border-gray-300 text-gray-700 hover:border-gray-400 bg-white"
+                      )}
+                      style={selectedOccasions.includes(occasion) ? { backgroundColor: '#F6511E' } : {}}
+                    >
+                      {selectedOccasions.includes(occasion) && <Check className="w-3 h-3 inline mr-1" />}
+                      {occasion}
+                    </button>
                   ))}
                 </div>
               </div>
 
-              {/* Gift Types - Multi-select */}
+              {/* Gift Types - Multi-select with Chips */}
               <div className="space-y-2">
-                <Label>Gift Type <span className="text-gray-500 font-normal">(Optional - helps with filtering)</span></Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 border border-gray-200 rounded-lg">
+                <Label>Gift Type * <span className="text-gray-500 font-normal">(Select at least one occasion or gift type)</span></Label>
+                <div className="flex flex-wrap gap-2">
                   {GIFT_TYPE_OPTIONS.map((giftType) => (
-                    <div key={giftType} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`gift-${giftType}`}
-                        checked={selectedGiftTypes.includes(giftType)}
-                        onCheckedChange={() => toggleGiftType(giftType)}
-                      />
-                      <label
-                        htmlFor={`gift-${giftType}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {giftType}
-                      </label>
-                    </div>
+                    <button
+                      key={giftType}
+                      type="button"
+                      onClick={() => {
+                        toggleGiftType(giftType);
+                        setTouchedField('giftTypes');
+                      }}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-sm font-medium transition-colors border",
+                        selectedGiftTypes.includes(giftType)
+                          ? "border-transparent text-white"
+                          : "border-gray-300 text-gray-700 hover:border-gray-400 bg-white"
+                      )}
+                      style={selectedGiftTypes.includes(giftType) ? { backgroundColor: '#F6511E' } : {}}
+                    >
+                      {selectedGiftTypes.includes(giftType) && <Check className="w-3 h-3 inline mr-1" />}
+                      {giftType}
+                    </button>
                   ))}
                 </div>
+                {selectedGiftTypes.length === 0 && selectedOccasions.length === 0 && (isSubmitting || touched.giftTypes || touched.occasions) && (
+                  <p className="text-sm text-red-600 mt-1">Please select at least one occasion or gift type</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -711,29 +739,7 @@ export function CreateProductPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="shortDescription">Short Description</Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Brief summary shown on product cards and search results (1-2 sentences)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Input
-                  id="shortDescription"
-                  value={shortDescription}
-                  onChange={(e) => setShortDescription(e.target.value)}
-                  placeholder="Brief product summary"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="description">Full Description *</Label>
+                  <Label htmlFor="description">Description *</Label>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -755,7 +761,7 @@ export function CreateProductPage() {
                   className={!description && (isSubmitting || touched.description) ? 'border-red-500 ring-1 ring-red-500' : ''}
                 />
                 {!description && (isSubmitting || touched.description) && (
-                  <p className="text-sm text-red-600 mt-1">Full description is required</p>
+                  <p className="text-sm text-red-600 mt-1">Description is required</p>
                 )}
               </div>
             </CardContent>
@@ -1149,40 +1155,38 @@ export function CreateProductPage() {
                     </TooltipProvider>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={addKeyInfo}>
-                    <Plus className="w-4 h-4 mr-1" /> Add
+                    <Plus className="w-4 h-4 mr-1" /> Add More
                   </Button>
                 </div>
-                {keyInfo.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-4">No key information added yet</p>
-                ) : (
-                  <div className="space-y-3">
-                    {keyInfo.map((info, index) => (
-                      <div key={index} className="flex gap-2 items-start">
-                        <Input
-                          placeholder="Label (e.g., Dimensions)"
-                          value={info.label}
-                          onChange={(e) => updateKeyInfo(index, 'label', e.target.value)}
-                          className="flex-1"
-                        />
-                        <Input
-                          placeholder="Value (e.g., 10cm x 15cm)"
-                          value={info.value}
-                          onChange={(e) => updateKeyInfo(index, 'value', e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeKeyInfo(index)}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="text-sm text-gray-500">Add product specifications that customers should know about.</p>
+                <div className="space-y-3">
+                  {keyInfo.map((info, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <Input
+                        placeholder="Label (e.g., Dimensions)"
+                        value={info.label}
+                        onChange={(e) => updateKeyInfo(index, 'label', e.target.value)}
+                        className="flex-1"
+                      />
+                      <Input
+                        placeholder="Value (e.g., 10cm x 15cm)"
+                        value={info.value}
+                        onChange={(e) => updateKeyInfo(index, 'value', e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeKeyInfo(index)}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        disabled={keyInfo.length === 1}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
