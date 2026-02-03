@@ -13,6 +13,7 @@ import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageTransition } from '@/lib/motion';
+import { AutomationRuleSkeleton } from '@/components/ui/skeletons';
 import type { EmailAutomationRule, EmailTemplate } from '@/types';
 
 const TRIGGER_INFO: Record<string, { label: string; description: string; icon: React.ReactNode }> = {
@@ -166,9 +167,11 @@ export function AutomationRulesPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-          </div>
+          <>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <AutomationRuleSkeleton key={i} />
+            ))}
+          </>
         ) : rules.length === 0 ? (
           <Card className="border-0 shadow-sm">
             <CardContent className="flex flex-col items-center justify-center py-16 text-gray-400">

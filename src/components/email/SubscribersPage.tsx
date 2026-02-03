@@ -9,6 +9,7 @@ import { ArrowLeft, Search, Loader2, Users, Gift, UserPlus, Store } from 'lucide
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { PageTransition } from '@/lib/motion';
+import { SubscriberCardSkeleton } from '@/components/ui/skeletons';
 import type { Subscriber, SubscriberStats } from '@/types';
 
 export function SubscribersPage() {
@@ -124,9 +125,11 @@ export function SubscribersPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-0">
             {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-              </div>
+              <>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SubscriberCardSkeleton key={i} />
+                ))}
+              </>
             ) : subscribers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                 <Users className="w-12 h-12 mb-4" />

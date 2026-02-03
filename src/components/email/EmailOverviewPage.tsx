@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Send, Zap, Users, Plus, ArrowRight, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { PageTransition } from '@/lib/motion';
+import { StatsGridSkeleton } from '@/components/ui/skeletons';
 import type { EmailTemplate, EmailCampaign, EmailAutomationRule, SubscriberStats } from '@/types';
 
 export function EmailOverviewPage() {
@@ -62,11 +63,7 @@ export function EmailOverviewPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <StatsGridSkeleton />;
   }
 
   return (

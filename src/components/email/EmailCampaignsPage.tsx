@@ -10,6 +10,7 @@ import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageTransition } from '@/lib/motion';
+import { EmailCampaignTableSkeleton } from '@/components/ui/skeletons';
 import type { EmailCampaign } from '@/types';
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -199,9 +200,7 @@ export function EmailCampaignsPage() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-0">
             {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-              </div>
+              <EmailCampaignTableSkeleton />
             ) : campaigns.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                 <Mail className="w-12 h-12 mb-4" />

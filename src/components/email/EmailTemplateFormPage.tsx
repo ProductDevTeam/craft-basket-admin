@@ -11,6 +11,7 @@ import { ArrowLeft, Loader2, Eye, Save } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { PageTransition } from '@/lib/motion';
+import { FormSkeleton } from '@/components/ui/skeletons';
 import { TiptapEmailEditor } from './TiptapEmailEditor';
 
 export function EmailTemplateFormPage() {
@@ -81,11 +82,7 @@ export function EmailTemplateFormPage() {
   };
 
   if (isFetching) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <FormSkeleton />;
   }
 
   return (

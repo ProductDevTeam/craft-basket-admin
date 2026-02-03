@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, Eye, Save, Send, Clock } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { PageTransition } from '@/lib/motion';
+import { FormSkeleton } from '@/components/ui/skeletons';
 import { TiptapEmailEditor } from './TiptapEmailEditor';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { EmailTemplate } from '@/types';
@@ -178,11 +179,7 @@ export function EmailCampaignFormPage() {
   };
 
   if (isFetching) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
+    return <FormSkeleton />;
   }
 
   return (
