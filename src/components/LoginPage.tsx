@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2, ShoppingBasket } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { motion } from '@/lib/motion';
+import ebunlyLogo from '@/assets/ebunly-logo.png';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -43,9 +44,9 @@ export function LoginPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg bg-ebunly-orange"
+              className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg bg-white"
             >
-              <ShoppingBasket className="w-10 h-10 text-white" />
+              <img src={ebunlyLogo} alt="Ebunly Logo" className="w-16 h-16 object-contain" />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}

@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
-  ShoppingBasket,
   LogOut,
   Plus,
   LayoutDashboard,
@@ -17,6 +16,7 @@ import {
   Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ebunlyLogo from '@/assets/ebunly-logo.png';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -90,9 +90,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 hidden lg:flex lg:flex-col">
         {/* Logo */}
         <div className="flex items-center gap-3 h-16 px-6 border-b border-gray-200">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-ebunly-orange">
-            <ShoppingBasket className="w-5 h-5 text-white" />
-          </div>
+          <img src={ebunlyLogo} alt="Ebunly Logo" className="h-10 object-contain" />
           <div>
             <h1 className="text-lg font-bold text-gray-900">Ebunly</h1>
             <p className="text-xs text-gray-500">Admin Portal</p>
@@ -165,9 +163,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-ebunly-orange">
-              <ShoppingBasket className="w-5 h-5 text-white" />
-            </div>
+            <img src={ebunlyLogo} alt="Ebunly Logo" className="h-10 object-contain" />
             <div>
               <h1 className="text-lg font-bold text-gray-900">Ebunly</h1>
               <p className="text-xs text-gray-500">Admin Portal</p>
@@ -262,10 +258,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F6511E' }}>
-                <ShoppingBasket className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-gray-900">Ebunly</span>
+              <img src={ebunlyLogo} alt="Ebunly Logo" className="h-6 object-contain" />
             </div>
             <div className="w-6" /> {/* Spacer for balance */}
           </div>
