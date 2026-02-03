@@ -13,7 +13,8 @@ import {
   Users,
   ShoppingCart,
   Settings,
-  BarChart3
+  BarChart3,
+  Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +41,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         location.pathname.startsWith('/edit-product')
       );
     }
+    // For email section, match all /email/* routes
+    if (path === '/email') {
+      return location.pathname.startsWith('/email');
+    }
     // Default exact match for other routes
     return location.pathname === path;
   };
@@ -59,6 +64,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       name: 'Vendors',
       path: '/vendors',
       icon: Users,
+    },
+    {
+      name: 'Email',
+      path: '/email',
+      icon: Mail,
     },
     {
       name: 'Orders',

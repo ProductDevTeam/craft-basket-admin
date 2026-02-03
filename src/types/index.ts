@@ -110,6 +110,78 @@ export interface ApiResponse<T> {
   };
 }
 
+// ==================== EMAIL TYPES ====================
+
+export type EmailTemplateCategory = 'welcome' | 'birthday' | 'promotional' | 'newsletter' | 'transactional' | 'custom';
+
+export interface EmailTemplate {
+  _id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  jsonContent?: Record<string, unknown>;
+  category: EmailTemplateCategory;
+  isActive: boolean;
+  createdBy: { _id: string; firstName: string; lastName: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
+export type AudienceSegment = 'all_customers' | 'all_vendors' | 'birthday_this_month' | 'new_customers_30d' | 'inactive_customers_90d' | 'custom';
+
+export interface EmailCampaign {
+  _id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  jsonContent?: Record<string, unknown>;
+  template?: { _id: string; name: string; subject?: string };
+  status: CampaignStatus;
+  audienceSegment: AudienceSegment;
+  customRecipients?: string[];
+  scheduledAt?: string;
+  sentAt?: string;
+  totalRecipients: number;
+  successCount: number;
+  failCount: number;
+  createdBy: { _id: string; firstName: string; lastName: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AutomationTrigger = 'registration' | 'birthday' | 'inactive_30d' | 'first_purchase';
+
+export interface EmailAutomationRule {
+  _id: string;
+  name: string;
+  trigger: AutomationTrigger;
+  isEnabled: boolean;
+  template?: { _id: string; name: string; subject?: string };
+  subject: string;
+  htmlContent?: string;
+  lastRunAt?: string;
+  createdBy: { _id: string; firstName: string; lastName: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Subscriber {
+  _id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  createdAt: string;
+}
+
+export interface SubscriberStats {
+  totalCustomers: number;
+  customersWithBirthday: number;
+  newCustomers30d: number;
+  totalVendors: number;
+}
+
 export interface DashboardStats {
   totalProducts: number;
   totalVendors: number;
