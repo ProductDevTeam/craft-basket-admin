@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LoginPage } from './components/LoginPage';
 import { AdminLayout } from './components/AdminLayout';
 import { DashboardPage } from './components/DashboardPage';
@@ -59,9 +60,13 @@ function AdminContent() {
 }
 
 export default function AdminApp() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  
   return (
-    <AuthProvider>
-      <AdminContent />
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={clientId}>
+      <AuthProvider>
+        <AdminContent />
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
