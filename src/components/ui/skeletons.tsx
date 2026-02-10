@@ -374,3 +374,63 @@ export function ProductViewPageSkeleton() {
     </div>
   );
 }
+// Email campaign table skeleton
+export function EmailCampaignTableSkeleton() {
+  return <TableSkeleton rows={5} columns={6} />;
+}
+
+// Email template card skeleton
+export function EmailTemplateCardSkeleton() {
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardHeader>
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-60 mt-2" />
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <Skeleton className="h-20 w-full" />
+        <div className="flex gap-2">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 w-9" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Email automation rule skeleton
+export function AutomationRuleSkeleton() {
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-52" />
+          <div className="flex gap-2 pt-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Email subscriber card skeleton
+export function SubscriberCardSkeleton() {
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="h-6 w-20 rounded-full" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

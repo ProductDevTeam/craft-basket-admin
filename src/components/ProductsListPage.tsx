@@ -144,11 +144,13 @@ export function ProductsListPage() {
         // Apply client-side filters
         // Filter by vendor if vendorFilter is set
         if (vendorFilter) {
-          filteredProducts = filteredProducts.filter((p: Product) => p.vendor._id === vendorFilter);
+          filteredProducts = filteredProducts.filter((p: Product) => p.vendor?._id === vendorFilter);
           // Set vendor name from the first product for display
           if (filteredProducts.length > 0) {
             const vendor = filteredProducts[0].vendor;
-            setVendorName(vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`);
+            if (vendor) {
+              setVendorName(vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`);
+            }
           }
         }
 
@@ -596,7 +598,7 @@ export function ProductsListPage() {
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   />
-                  <div className="absolute top-3 right-3 flex flex-col gap-2">
+                  <div className="absolute top-3 right-3 flex flex-col gap-2 pointer-events-none">
                     {getStatusBadge(product.approvalStatus)}
                     {product.isFeatured && (
                       <Badge className="bg-purple-100 text-purple-800 text-xs">
@@ -630,8 +632,8 @@ export function ProductsListPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
                     <Users className="w-4 h-4" />
                     <span className="truncate">
-                      {product.vendor.vendorInfo?.businessName ||
-                        `${product.vendor.firstName} ${product.vendor.lastName}`}
+                      {product.vendor?.vendorInfo?.businessName ||
+                        (product.vendor ? `${product.vendor.firstName} ${product.vendor.lastName}` : 'Unknown Vendor')}
                     </span>
                   </div>
 

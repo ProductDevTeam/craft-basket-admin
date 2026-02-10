@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LoginPage } from './components/LoginPage';
 import { AdminLayout } from './components/AdminLayout';
 import { DashboardPage } from './components/DashboardPage';
@@ -9,6 +10,13 @@ import { ProductsListPage } from './components/ProductsListPage';
 import { ProductViewPage } from './components/ProductViewPage';
 import { VendorsPage } from './components/VendorsPage';
 import { ScrollToTop } from './components/ScrollToTop';
+import { EmailOverviewPage } from './components/email/EmailOverviewPage';
+import { EmailTemplatesPage } from './components/email/EmailTemplatesPage';
+import { EmailTemplateFormPage } from './components/email/EmailTemplateFormPage';
+import { EmailCampaignsPage } from './components/email/EmailCampaignsPage';
+import { EmailCampaignFormPage } from './components/email/EmailCampaignFormPage';
+import { AutomationRulesPage } from './components/email/AutomationRulesPage';
+import { SubscribersPage } from './components/email/SubscribersPage';
 
 
 function AdminContent() {
@@ -37,15 +45,28 @@ function AdminContent() {
         <Route path="/create-product" element={<CreateProductPage />} />
         <Route path="/edit-product/:id" element={<CreateProductPage />} />
         <Route path="/vendors" element={<VendorsPage />} />
+        <Route path="/email" element={<EmailOverviewPage />} />
+        <Route path="/email/templates" element={<EmailTemplatesPage />} />
+        <Route path="/email/templates/create" element={<EmailTemplateFormPage />} />
+        <Route path="/email/templates/:id/edit" element={<EmailTemplateFormPage />} />
+        <Route path="/email/campaigns" element={<EmailCampaignsPage />} />
+        <Route path="/email/campaigns/create" element={<EmailCampaignFormPage />} />
+        <Route path="/email/campaigns/:id/edit" element={<EmailCampaignFormPage />} />
+        <Route path="/email/automation" element={<AutomationRulesPage />} />
+        <Route path="/email/subscribers" element={<SubscribersPage />} />
       </Routes>
     </AdminLayout>
   );
 }
 
 export default function AdminApp() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  
   return (
-    <AuthProvider>
-      <AdminContent />
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={clientId}>
+      <AuthProvider>
+        <AdminContent />
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
