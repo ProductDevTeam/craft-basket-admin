@@ -4,14 +4,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Loader2, Eye, Edit, Trash2, Filter, Package, Users, X, ChevronDown, ArrowLeft, User } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Plus,
+  Search,
+  Loader2,
+  Eye,
+  Edit,
+  Trash2,
+  Filter,
+  Package,
+  Users,
+  X,
+  ChevronDown,
+  ArrowLeft,
+  User,
+} from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { OCCASION_OPTIONS, GIFT_TYPE_OPTIONS } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { motion, AnimatePresence, PageTransition, StaggerGrid, StaggerItem, staggerItem } from '@/lib/motion';
+import {
+  motion,
+  AnimatePresence,
+  PageTransition,
+  StaggerGrid,
+  StaggerItem,
+  staggerItem,
+} from '@/lib/motion';
 import { ProductGridSkeleton, PageHeaderSkeleton } from '@/components/ui/skeletons';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
@@ -85,7 +112,9 @@ export function ProductsListPage() {
   // Filter state
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [selectedGiftTypes, setSelectedGiftTypes] = useState<string[]>([]);
-  const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number; max: number } | null>(null);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<{ min: number; max: number } | null>(
+    null
+  );
   const [selectedDiscount, setSelectedDiscount] = useState<number | null>(null);
   const [madeInNigeria, setMadeInNigeria] = useState<boolean | null>(null);
   const [deliveryDays, setDeliveryDays] = useState<number | null>(null);
@@ -128,65 +157,48 @@ export function ProductsListPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, searchQuery, selectedOccasions, selectedGiftTypes, selectedPriceRange, selectedDiscount, madeInNigeria, deliveryDays, vendorFilter]);
+  }, [
+    currentPage,
+    searchQuery,
+    selectedOccasions,
+    selectedGiftTypes,
+    selectedPriceRange,
+    selectedDiscount,
+    madeInNigeria,
+    deliveryDays,
+    vendorFilter,
+  ]);
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
       const response = await apiClient.getProducts({
         page: currentPage,
-        limit: 100, // Fetch more to allow client-side filtering
+        limit: 12,
         search: searchQuery,
+        vendor: vendorFilter || undefined,
+        occasions: selectedOccasions.length > 0 ? selectedOccasions : undefined,
+        giftTypes: selectedGiftTypes.length > 0 ? selectedGiftTypes : undefined,
+        minPrice: selectedPriceRange?.min,
+        maxPrice: selectedPriceRange?.max === Infinity ? undefined : selectedPriceRange?.max,
+        minDiscount: selectedDiscount !== null ? selectedDiscount : undefined,
+        madeInNigeria: madeInNigeria !== null ? madeInNigeria : undefined,
+        maxDeliveryDays: deliveryDays !== null ? deliveryDays : undefined,
       });
       if (response.success && response.data) {
-        let filteredProducts = Array.isArray(response.data) ? response.data : [];
+        const fetchedProducts = Array.isArray(response.data) ? response.data : [];
+        setProducts(fetchedProducts);
+        setTotalPages(response.meta?.totalPages || 1);
 
-        // Apply client-side filters
-        // Filter by vendor if vendorFilter is set
-        if (vendorFilter) {
-          filteredProducts = filteredProducts.filter((p: Product) => p.vendor?._id === vendorFilter);
-          // Set vendor name from the first product for display
-          if (filteredProducts.length > 0) {
-            const vendor = filteredProducts[0].vendor;
-            if (vendor) {
-              setVendorName(vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`);
-            }
+        // Set vendor name from the first product for display
+        if (vendorFilter && fetchedProducts.length > 0) {
+          const vendor = fetchedProducts[0].vendor;
+          if (vendor) {
+            setVendorName(
+              vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`
+            );
           }
         }
-
-        if (selectedOccasions.length > 0) {
-          filteredProducts = filteredProducts.filter((p: Product) =>
-            p.occasion?.some((o: string) => selectedOccasions.includes(o))
-          );
-        }
-        if (selectedGiftTypes.length > 0) {
-          filteredProducts = filteredProducts.filter((p: Product) =>
-            p.giftType?.some((g: string) => selectedGiftTypes.includes(g))
-          );
-        }
-        if (selectedPriceRange) {
-          filteredProducts = filteredProducts.filter((p: Product) =>
-            p.basePrice >= selectedPriceRange.min && p.basePrice <= selectedPriceRange.max
-          );
-        }
-        if (selectedDiscount !== null) {
-          filteredProducts = filteredProducts.filter((p: Product) =>
-            (p.discountPercentage || 0) >= selectedDiscount
-          );
-        }
-        if (madeInNigeria !== null) {
-          filteredProducts = filteredProducts.filter((p: Product) =>
-            p.isMadeInNigeria === madeInNigeria
-          );
-        }
-        if (deliveryDays !== null) {
-          filteredProducts = filteredProducts.filter((p: Product) =>
-            (p.estimatedDeliveryDays || 7) <= deliveryDays
-          );
-        }
-
-        setProducts(filteredProducts);
-        setTotalPages(Math.ceil(filteredProducts.length / 10) || 1);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load products';
@@ -203,11 +215,7 @@ export function ProductsListPage() {
       rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800' },
     };
     const variant = variants[status] || variants.pending;
-    return (
-      <Badge className={variant.className}>
-        {variant.label}
-      </Badge>
-    );
+    return <Badge className={variant.className}>{variant.label}</Badge>;
   };
 
   const mainImage = (product: Product) => {
@@ -336,7 +344,9 @@ export function ProductsListPage() {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="justify-between w-full">
                     <span className="truncate">
-                      {selectedOccasions.length > 0 ? `${selectedOccasions.length} selected` : 'Occasion'}
+                      {selectedOccasions.length > 0
+                        ? `${selectedOccasions.length} selected`
+                        : 'Occasion'}
                     </span>
                     <ChevronDown className="w-4 h-4 ml-2 shrink-0" />
                   </Button>
@@ -370,7 +380,9 @@ export function ProductsListPage() {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="justify-between w-full">
                     <span className="truncate">
-                      {selectedGiftTypes.length > 0 ? `${selectedGiftTypes.length} selected` : 'Gift Type'}
+                      {selectedGiftTypes.length > 0
+                        ? `${selectedGiftTypes.length} selected`
+                        : 'Gift Type'}
                     </span>
                     <ChevronDown className="w-4 h-4 ml-2 shrink-0" />
                   </Button>
@@ -401,7 +413,9 @@ export function ProductsListPage() {
 
               {/* Price Filter */}
               <Select
-                value={selectedPriceRange ? `${selectedPriceRange.min}-${selectedPriceRange.max}` : 'all'}
+                value={
+                  selectedPriceRange ? `${selectedPriceRange.min}-${selectedPriceRange.max}` : 'all'
+                }
                 onValueChange={(value) => {
                   if (value === 'all') {
                     setSelectedPriceRange(null);
@@ -484,7 +498,6 @@ export function ProductsListPage() {
                   ))}
                 </SelectContent>
               </Select>
-
             </div>
           )}
 
@@ -494,7 +507,9 @@ export function ProductsListPage() {
               {selectedOccasions.map((occ) => (
                 <Badge key={occ} variant="secondary" className="gap-1">
                   {occ}
-                  <button onClick={() => setSelectedOccasions(selectedOccasions.filter((o) => o !== occ))}>
+                  <button
+                    onClick={() => setSelectedOccasions(selectedOccasions.filter((o) => o !== occ))}
+                  >
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
@@ -502,7 +517,9 @@ export function ProductsListPage() {
               {selectedGiftTypes.map((gt) => (
                 <Badge key={gt} variant="secondary" className="gap-1">
                   {gt}
-                  <button onClick={() => setSelectedGiftTypes(selectedGiftTypes.filter((g) => g !== gt))}>
+                  <button
+                    onClick={() => setSelectedGiftTypes(selectedGiftTypes.filter((g) => g !== gt))}
+                  >
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
@@ -568,7 +585,9 @@ export function ProductsListPage() {
                   <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                   <p className="text-lg font-medium text-gray-900 mb-2">No products found</p>
                   <p className="text-sm text-gray-500 mb-6">
-                    {searchQuery ? 'Try adjusting your search query' : 'Get started by creating your first product'}
+                    {searchQuery
+                      ? 'Try adjusting your search query'
+                      : 'Get started by creating your first product'}
                   </p>
                   {!searchQuery && (
                     <Button
@@ -591,124 +610,132 @@ export function ProductsListPage() {
                 <StaggerItem key={product._id}>
                   <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
                     <Card className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
-                {/* Product Image */}
-                <div className="relative aspect-square overflow-hidden bg-gray-100">
-                  <img
-                    src={mainImage(product)}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                  <div className="absolute top-3 right-3 flex flex-col gap-2 pointer-events-none">
-                    {getStatusBadge(product.approvalStatus)}
-                    {product.isFeatured && (
-                      <Badge className="bg-purple-100 text-purple-800 text-xs">
-                        Featured
-                      </Badge>
-                    )}
-                    {product.isBestSeller && (
-                      <Badge className="bg-blue-100 text-blue-800 text-xs">
-                        Best Seller
-                      </Badge>
-                    )}
-                    {product.isMadeInNigeria && (
-                      <Badge className="bg-green-100 text-green-800 text-xs">
-                        🇳🇬 Made in Nigeria
-                      </Badge>
-                    )}
-                  </div>
-                  {!product.isActive && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <Badge className="bg-red-500 text-white">Inactive</Badge>
-                    </div>
-                  )}
-                </div>
+                      {/* Product Image */}
+                      <div className="relative aspect-square overflow-hidden bg-gray-100">
+                        <img
+                          src={mainImage(product)}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <div className="absolute top-3 right-3 flex flex-col gap-2 pointer-events-none">
+                          {getStatusBadge(product.approvalStatus)}
+                          {product.isFeatured && (
+                            <Badge className="bg-purple-100 text-purple-800 text-xs">
+                              Featured
+                            </Badge>
+                          )}
+                          {product.isBestSeller && (
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">Best Seller</Badge>
+                          )}
+                          {product.isMadeInNigeria && (
+                            <Badge className="bg-green-100 text-green-800 text-xs">
+                              🇳🇬 Made in Nigeria
+                            </Badge>
+                          )}
+                        </div>
+                        {!product.isActive && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <Badge className="bg-red-500 text-white">Inactive</Badge>
+                          </div>
+                        )}
+                      </div>
 
-                <CardContent className="p-4">
-                  {/* Product Info */}
-                  <h3 className="font-semibold text-gray-900 truncate mb-2" title={product.name}>
-                    {product.name}
-                  </h3>
+                      <CardContent className="p-4">
+                        {/* Product Info */}
+                        <h3
+                          className="font-semibold text-gray-900 truncate mb-2"
+                          title={product.name}
+                        >
+                          {product.name}
+                        </h3>
 
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                    <Users className="w-4 h-4" />
-                    <span className="truncate">
-                      {product.vendor?.vendorInfo?.businessName ||
-                        (product.vendor ? `${product.vendor.firstName} ${product.vendor.lastName}` : 'Unknown Vendor')}
-                    </span>
-                  </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                          <Users className="w-4 h-4" />
+                          <span className="truncate">
+                            {product.vendor?.vendorInfo?.businessName ||
+                              (product.vendor
+                                ? `${product.vendor.firstName} ${product.vendor.lastName}`
+                                : 'Unknown Vendor')}
+                          </span>
+                        </div>
 
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xl font-bold text-gray-900">
-                        ₦{product.basePrice.toLocaleString()}
-                      </p>
-                      {product.discountPercentage && product.discountPercentage > 0 && (
-                        <p className="text-sm font-medium" style={{ color: '#F6511E' }}>
-                          {product.discountPercentage}% off
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-1 justify-end max-w-[120px]">
-                      {[...(product.occasion || []), ...(product.giftType || [])].slice(0, 2).map((tag, idx) => (
-                        <Badge key={`${tag}-${idx}`} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {[...(product.occasion || []), ...(product.giftType || [])].length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{[...(product.occasion || []), ...(product.giftType || [])].length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-xl font-bold text-gray-900">
+                              ₦{product.basePrice.toLocaleString()}
+                            </p>
+                            {product.discountPercentage && product.discountPercentage > 0 && (
+                              <p className="text-sm font-medium" style={{ color: '#F6511E' }}>
+                                {product.discountPercentage}% off
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-1 justify-end max-w-[120px]">
+                            {[...(product.occasion || []), ...(product.giftType || [])]
+                              .slice(0, 2)
+                              .map((tag, idx) => (
+                                <Badge key={`${tag}-${idx}`} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            {[...(product.occasion || []), ...(product.giftType || [])].length >
+                              2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +
+                                {[...(product.occasion || []), ...(product.giftType || [])].length -
+                                  2}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                    <span className={product.stock > 0 ? 'text-green-600' : 'text-red-600'}>
-                      Stock: {product.stock}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(product.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                          <span className={product.stock > 0 ? 'text-green-600' : 'text-red-600'}>
+                            Stock: {product.stock}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(product.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => navigate(`/products/${product._id}`)}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="hover:bg-gray-100"
-                      onClick={() => navigate(`/edit-product/${product._id}`)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(product._id, product.name);
-                      }}
-                      disabled={deletingProductId === product._id}
-                    >
-                      {deletingProductId === product._id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => navigate(`/products/${product._id}`)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="hover:bg-gray-100"
+                            onClick={() => navigate(`/edit-product/${product._id}`)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(product._id, product.name);
+                            }}
+                            disabled={deletingProductId === product._id}
+                          >
+                            {deletingProductId === product._id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 </StaggerItem>
               ))}
