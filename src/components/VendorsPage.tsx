@@ -112,18 +112,13 @@ export function VendorsPage() {
       >
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Vendors</h1>
-          <p className="text-gray-600 mt-1">
-            Manage marketplace vendors and send invitations
-          </p>
+          <p className="text-gray-600 mt-1">Manage marketplace vendors and send invitations</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                className="text-white"
-                style={{ backgroundColor: '#F6511E' }}
-              >
+              <Button className="text-white" style={{ backgroundColor: '#F6511E' }}>
                 <UserPlus className="w-4 h-4 mr-2" />
                 Invite Vendor
               </Button>
@@ -195,12 +190,7 @@ export function VendorsPage() {
             className="pl-10"
           />
         </div>
-        <Button
-          variant="outline"
-          onClick={fetchVendors}
-          disabled={isLoading}
-          className="shrink-0"
-        >
+        <Button variant="outline" onClick={fetchVendors} disabled={isLoading} className="shrink-0">
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -216,9 +206,7 @@ export function VendorsPage() {
         <Badge variant="secondary">
           {filteredVendors.length} {filteredVendors.length === 1 ? 'vendor' : 'vendors'}
         </Badge>
-        {searchQuery && (
-          <span>matching "{searchQuery}"</span>
-        )}
+        {searchQuery && <span>matching "{searchQuery}"</span>}
       </motion.div>
 
       {/* Vendors Table */}
@@ -312,13 +300,9 @@ export function VendorsPage() {
                       <TableCell className="text-gray-600">
                         {vendor.vendorInfo?.businessName || '—'}
                       </TableCell>
-                      <TableCell className="text-gray-600">
-                        {vendor.email}
-                      </TableCell>
+                      <TableCell className="text-gray-600">{vendor.email}</TableCell>
                       <TableCell className="text-center">
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                          Active
-                        </Badge>
+                        <Badge className="bg-green-100 text-green-700">Active</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

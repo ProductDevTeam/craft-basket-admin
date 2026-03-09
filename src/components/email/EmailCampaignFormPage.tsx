@@ -6,14 +6,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { ArrowLeft, Loader2, Eye, Save, Send, Clock } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { PageTransition } from '@/lib/motion';
 import { FormSkeleton } from '@/components/ui/skeletons';
-import { TiptapEmailEditor } from './TiptapEmailEditor';
+import { EmailBuilder } from './EmailBuilder';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { EmailTemplate } from '@/types';
 
@@ -107,9 +119,13 @@ export function EmailCampaignFormPage() {
       scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
     }
 
-    const recipients = audienceSegment === 'custom'
-      ? customRecipients.split(',').map((e) => e.trim()).filter(Boolean)
-      : undefined;
+    const recipients =
+      audienceSegment === 'custom'
+        ? customRecipients
+            .split(',')
+            .map((e) => e.trim())
+            .filter(Boolean)
+        : undefined;
 
     return {
       name,
@@ -130,7 +146,7 @@ export function EmailCampaignFormPage() {
     }
     try {
       setIsSaving(true);
-      const payload = buildPayload();
+      const payload: any = buildPayload();
       if (isEdit) {
         await apiClient.updateEmailCampaign(id!, payload);
         toast.success('Campaign updated');
@@ -153,7 +169,7 @@ export function EmailCampaignFormPage() {
     }
     try {
       setIsSending(true);
-      const payload = buildPayload();
+      const payload: any = buildPayload();
       let campaignId = id;
 
       if (isEdit) {
@@ -204,57 +220,82 @@ export function EmailCampaignFormPage() {
                   Preview
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh]">
+              <DialogContent className="max-w-4xl max-h-[90vh]">
                 <DialogHeader>
                   <DialogTitle>Email Preview</DialogTitle>
                 </DialogHeader>
-                <div className="border rounded-lg overflow-auto max-h-[60vh]">
-                  <iframe srcDoc={htmlContent} title="Preview" className="w-full h-[500px] border-0" sandbox="" />
+                <div className="border rounded-lg overflow-auto max-h-[70vh] bg-gray-100 p-4">
+                  <div
+                    className="mx-auto bg-white shadow-lg overflow-hidden"
+                    style={{ width: '600px' }}
+                  >
+                    <iframe
+                      srcDoc={htmlContent}
+                      title="Email Preview"
+                      className="w-full h-[600px] border-0"
+                      sandbox=""
+                    />
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
             <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving}>
-              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
               Save Draft
             </Button>
-            <Button onClick={() => setShowSendConfirm(true)} disabled={isSending} style={{ backgroundColor: '#F6511E' }} className="text-white">
+            <Button
+              onClick={() => setShowSendConfirm(true)}
+              disabled={isSending}
+              style={{ backgroundColor: '#F6511E' }}
+              className="text-white"
+            >
               <Send className="w-4 h-4 mr-2" />
               Send Now
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             <Card className="border-0 shadow-sm">
               <CardHeader>
                 <CardTitle>Campaign Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Campaign Name *</Label>
-                  <Input placeholder="e.g. January Newsletter" value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input
+                    placeholder="e.g. January Newsletter"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Subject Line *</Label>
-                  <Input placeholder="e.g. New arrivals just for you!" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                  <Input
+                    placeholder="e.g. New arrivals just for you!"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle>Email Content *</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TiptapEmailEditor
-                  content={htmlContent}
-                  jsonContent={jsonContent}
-                  onChange={(html, json) => { setHtmlContent(html); setJsonContent(json); }}
-                />
-              </CardContent>
-            </Card>
+            <div className="min-h-[800px]">
+              <EmailBuilder
+                initialContent={jsonContent}
+                onChange={(html, json) => {
+                  setHtmlContent(html);
+                  setJsonContent(json);
+                }}
+                minHeight="800px"
+              />
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -272,7 +313,9 @@ export function EmailCampaignFormPage() {
                   <SelectContent>
                     <SelectItem value="none">No template</SelectItem>
                     {templates.map((t) => (
-                      <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
+                      <SelectItem key={t._id} value={t._id}>
+                        {t.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -332,8 +375,16 @@ export function EmailCampaignFormPage() {
 
                 {enableSchedule && (
                   <div className="space-y-2">
-                    <Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
-                    <Input type="time" value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} />
+                    <Input
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                    />
+                    <Input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                    />
                   </div>
                 )}
               </CardContent>
