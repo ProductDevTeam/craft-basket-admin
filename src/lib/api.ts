@@ -1,4 +1,14 @@
-import { ApiResponse, Vendor, User, DashboardStats, EmailTemplate, EmailCampaign, EmailAutomationRule, Subscriber, SubscriberStats } from '../types';
+import {
+  ApiResponse,
+  Vendor,
+  User,
+  DashboardStats,
+  EmailTemplate,
+  EmailCampaign,
+  EmailAutomationRule,
+  Subscriber,
+  SubscriberStats,
+} from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -9,10 +19,7 @@ class ApiClient {
     this.token = token;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const headers: HeadersInit = {
       ...(options.headers || {}),
     };
@@ -49,7 +56,10 @@ class ApiClient {
     }
   }
 
-  async login(email: string, password: string): Promise<ApiResponse<{ token: string; user: User }>> {
+  async login(
+    email: string,
+    password: string
+  ): Promise<ApiResponse<{ token: string; user: User }>> {
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -82,11 +92,36 @@ class ApiClient {
     page?: number;
     limit?: number;
     search?: string;
+    vendor?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    minDiscount?: number;
+    madeInNigeria?: boolean;
+    maxDeliveryDays?: number;
+    occasions?: string[];
+    giftTypes?: string[];
   }): Promise<ApiResponse<any[]>> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
+    if (params?.vendor) queryParams.append('vendor', params.vendor);
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString());
+    if (params?.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString());
+    if (params?.minDiscount !== undefined)
+      queryParams.append('minDiscount', params.minDiscount.toString());
+    if (params?.madeInNigeria !== undefined)
+      queryParams.append('madeInNigeria', params.madeInNigeria.toString());
+    if (params?.maxDeliveryDays !== undefined)
+      queryParams.append('maxDeliveryDays', params.maxDeliveryDays.toString());
+    if (params?.occasions && params.occasions.length > 0) {
+      params.occasions.forEach((occ) => queryParams.append('occasions', occ));
+    }
+    if (params?.giftTypes && params.giftTypes.length > 0) {
+      params.giftTypes.forEach((gt) => queryParams.append('giftTypes', gt));
+    }
 
     return this.request(`/admin/products?${queryParams.toString()}`);
   }
@@ -95,10 +130,7 @@ class ApiClient {
     return this.request(`/admin/products/${id}`);
   }
 
-  async getActivityLogs(params?: {
-    page?: number;
-    limit?: number;
-  }): Promise<ApiResponse<any[]>> {
+  async getActivityLogs(params?: { page?: number; limit?: number }): Promise<ApiResponse<any[]>> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -125,7 +157,12 @@ class ApiClient {
 
   // ==================== EMAIL TEMPLATES ====================
 
-  async getEmailTemplates(params?: { page?: number; limit?: number; search?: string; category?: string }): Promise<ApiResponse<EmailTemplate[]>> {
+  async getEmailTemplates(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+  }): Promise<ApiResponse<EmailTemplate[]>> {
     const qp = new URLSearchParams();
     if (params?.page) qp.append('page', params.page.toString());
     if (params?.limit) qp.append('limit', params.limit.toString());
@@ -138,11 +175,20 @@ class ApiClient {
     return this.request(`/email/templates/${id}`);
   }
 
-  async createEmailTemplate(data: { name: string; subject: string; htmlContent: string; jsonContent?: Record<string, unknown>; category?: string }): Promise<ApiResponse<EmailTemplate>> {
+  async createEmailTemplate(data: {
+    name: string;
+    subject: string;
+    htmlContent: string;
+    jsonContent?: Record<string, unknown>;
+    category?: string;
+  }): Promise<ApiResponse<EmailTemplate>> {
     return this.request('/email/templates', { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<ApiResponse<EmailTemplate>> {
+  async updateEmailTemplate(
+    id: string,
+    data: Partial<EmailTemplate>
+  ): Promise<ApiResponse<EmailTemplate>> {
     return this.request(`/email/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
@@ -152,7 +198,11 @@ class ApiClient {
 
   // ==================== EMAIL CAMPAIGNS ====================
 
-  async getEmailCampaigns(params?: { page?: number; limit?: number; status?: string }): Promise<ApiResponse<EmailCampaign[]>> {
+  async getEmailCampaigns(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<ApiResponse<EmailCampaign[]>> {
     const qp = new URLSearchParams();
     if (params?.page) qp.append('page', params.page.toString());
     if (params?.limit) qp.append('limit', params.limit.toString());
@@ -164,11 +214,23 @@ class ApiClient {
     return this.request(`/email/campaigns/${id}`);
   }
 
-  async createEmailCampaign(data: { name: string; subject: string; htmlContent: string; jsonContent?: Record<string, unknown>; template?: string; audienceSegment: string; customRecipients?: string[]; scheduledAt?: string }): Promise<ApiResponse<EmailCampaign>> {
+  async createEmailCampaign(data: {
+    name: string;
+    subject: string;
+    htmlContent: string;
+    jsonContent?: Record<string, unknown>;
+    template?: string;
+    audienceSegment: string;
+    customRecipients?: string[];
+    scheduledAt?: string;
+  }): Promise<ApiResponse<EmailCampaign>> {
     return this.request('/email/campaigns', { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async updateEmailCampaign(id: string, data: Partial<EmailCampaign>): Promise<ApiResponse<EmailCampaign>> {
+  async updateEmailCampaign(
+    id: string,
+    data: Partial<EmailCampaign>
+  ): Promise<ApiResponse<EmailCampaign>> {
     return this.request(`/email/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
@@ -194,11 +256,21 @@ class ApiClient {
     return this.request(`/email/automation/${id}`);
   }
 
-  async createAutomationRule(data: { name: string; trigger: string; isEnabled?: boolean; template?: string; subject?: string; htmlContent?: string }): Promise<ApiResponse<EmailAutomationRule>> {
+  async createAutomationRule(data: {
+    name: string;
+    trigger: string;
+    isEnabled?: boolean;
+    template?: string;
+    subject?: string;
+    htmlContent?: string;
+  }): Promise<ApiResponse<EmailAutomationRule>> {
     return this.request('/email/automation', { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async updateAutomationRule(id: string, data: Partial<EmailAutomationRule>): Promise<ApiResponse<EmailAutomationRule>> {
+  async updateAutomationRule(
+    id: string,
+    data: Partial<EmailAutomationRule>
+  ): Promise<ApiResponse<EmailAutomationRule>> {
     return this.request(`/email/automation/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
@@ -208,7 +280,12 @@ class ApiClient {
 
   // ==================== SUBSCRIBERS ====================
 
-  async getSubscribers(params?: { page?: number; limit?: number; search?: string; segment?: string }): Promise<ApiResponse<Subscriber[]>> {
+  async getSubscribers(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    segment?: string;
+  }): Promise<ApiResponse<Subscriber[]>> {
     const qp = new URLSearchParams();
     if (params?.page) qp.append('page', params.page.toString());
     if (params?.limit) qp.append('limit', params.limit.toString());
@@ -223,10 +300,13 @@ class ApiClient {
 
   // ==================== TEST EMAIL ====================
 
-  async sendTestEmail(data: { email: string; subject: string; htmlContent: string }): Promise<ApiResponse<{ sent: boolean }>> {
+  async sendTestEmail(data: {
+    email: string;
+    subject: string;
+    htmlContent: string;
+  }): Promise<ApiResponse<{ sent: boolean }>> {
     return this.request('/email/test', { method: 'POST', body: JSON.stringify(data) });
   }
-
 }
 
 export const apiClient = new ApiClient();

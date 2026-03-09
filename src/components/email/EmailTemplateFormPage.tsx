@@ -5,14 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { ArrowLeft, Loader2, Eye, Save } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { PageTransition } from '@/lib/motion';
 import { FormSkeleton } from '@/components/ui/skeletons';
-import { TiptapEmailEditor } from './TiptapEmailEditor';
+import { EmailBuilder } from './EmailBuilder';
+import type { EmailTemplateCategory } from '@/types';
 
 export function EmailTemplateFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +34,7 @@ export function EmailTemplateFormPage() {
 
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
-  const [category, setCategory] = useState('custom');
+  const [category, setCategory] = useState<EmailTemplateCategory>('custom');
   const [isActive, setIsActive] = useState(true);
   const [htmlContent, setHtmlContent] = useState('');
   const [jsonContent, setJsonContent] = useState<Record<string, unknown> | undefined>();
@@ -45,7 +58,7 @@ export function EmailTemplateFormPage() {
         setSubject(t.subject);
         setCategory(t.category);
         setIsActive(t.isActive);
-        setHtmlContent(t.htmlContent);
+        setHtmlContent(t.htmlContent || '');
         if (t.jsonContent) setJsonContent(t.jsonContent);
       }
     } catch (err) {
@@ -57,8 +70,8 @@ export function EmailTemplateFormPage() {
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !subject.trim() || !htmlContent.trim()) {
-      toast.error('Please fill in all required fields');
+    if (!name.trim() || !subject.trim()) {
+      toast.error('Please fill in Name and Subject');
       return;
     }
 
@@ -107,35 +120,49 @@ export function EmailTemplateFormPage() {
                   Preview
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh]">
+              <DialogContent className="max-w-4xl max-h-[90vh]">
                 <DialogHeader>
                   <DialogTitle>Email Preview</DialogTitle>
                 </DialogHeader>
-                <div className="border rounded-lg overflow-auto max-h-[60vh]">
-                  <iframe
-                    srcDoc={htmlContent}
-                    title="Email Preview"
-                    className="w-full h-[500px] border-0"
-                    sandbox=""
-                  />
+                <div className="border rounded-lg overflow-auto max-h-[70vh] bg-gray-100 p-4">
+                  <div
+                    className="mx-auto bg-white shadow-lg overflow-hidden"
+                    style={{ width: '600px' }}
+                  >
+                    <iframe
+                      srcDoc={htmlContent}
+                      title="Email Preview"
+                      className="w-full h-[600px] border-0"
+                      sandbox=""
+                    />
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
-            <Button onClick={handleSave} disabled={isSaving} style={{ backgroundColor: '#F6511E' }} className="text-white">
-              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              style={{ backgroundColor: '#F6511E' }}
+              className="text-white"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
               {isEdit ? 'Update' : 'Create'}
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             <Card className="border-0 shadow-sm">
               <CardHeader>
                 <CardTitle>Template Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Template Name *</Label>
                   <Input
@@ -157,22 +184,16 @@ export function EmailTemplateFormPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle>Email Content *</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TiptapEmailEditor
-                  content={htmlContent}
-                  jsonContent={jsonContent}
-                  onChange={(html, json) => {
-                    setHtmlContent(html);
-                    setJsonContent(json);
-                  }}
-                  placeholder="Write your email content here..."
-                />
-              </CardContent>
-            </Card>
+            <div className="min-h-[800px]">
+              <EmailBuilder
+                initialContent={jsonContent}
+                onChange={(html, json) => {
+                  setHtmlContent(html);
+                  setJsonContent(json);
+                }}
+                minHeight="800px"
+              />
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -184,7 +205,10 @@ export function EmailTemplateFormPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select value={category} onValueChange={setCategory}>
+                  <Select
+                    value={category}
+                    onValueChange={(val) => setCategory(val as EmailTemplateCategory)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -201,11 +225,7 @@ export function EmailTemplateFormPage() {
 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="active">Active</Label>
-                  <Switch
-                    id="active"
-                    checked={isActive}
-                    onCheckedChange={setIsActive}
-                  />
+                  <Switch id="active" checked={isActive} onCheckedChange={setIsActive} />
                 </div>
               </CardContent>
             </Card>
@@ -213,7 +233,9 @@ export function EmailTemplateFormPage() {
             <Card className="border-0 shadow-sm bg-amber-50">
               <CardContent className="pt-6">
                 <p className="text-sm text-amber-800">
-                  <strong>Tip:</strong> Use <code className="bg-amber-100 px-1 rounded">{'{{firstName}}'}</code> in your template to personalize with the recipient's name.
+                  <strong>Tip:</strong> Use{' '}
+                  <code className="bg-amber-100 px-1 rounded">{'{{firstName}}'}</code> in your
+                  template to personalize with the recipient's name.
                 </p>
               </CardContent>
             </Card>
