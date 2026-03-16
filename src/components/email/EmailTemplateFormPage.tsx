@@ -104,13 +104,12 @@ export function EmailTemplateFormPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/email/templates')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Templates
-            </Button>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isEdit ? 'Edit Template' : 'Create Template'}
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {id ? 'Edit Template' : 'Create Template'}
+              </h1>
+              <p className="text-sm text-gray-500">Design your email template</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Dialog>

@@ -517,11 +517,7 @@ export function CreateProductPage() {
 
   return (
     <PageTransition className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
+      <div>
         <h1 className="text-3xl font-bold text-gray-900">
           {isEditMode ? 'Edit Product' : 'Create Product'}
         </h1>
@@ -530,7 +526,7 @@ export function CreateProductPage() {
             ? 'Update product information and media files.'
             : 'Create a product on behalf of a vendor. The product will be auto-approved.'}
         </p>
-      </motion.div>
+      </div>
 
       {/* Stepper */}
       <motion.div

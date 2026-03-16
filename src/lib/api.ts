@@ -246,6 +246,17 @@ class ApiClient {
     return this.request(`/email/campaigns/${id}/cancel`, { method: 'POST' });
   }
 
+  async getCampaignAnalytics(id: string): Promise<ApiResponse<{ campaign: EmailCampaign; stats: Record<string, any> }>> {
+    return this.request(`/email/campaigns/${id}/analytics`);
+  }
+
+  async getCampaignRecipients(id: string, params?: { page?: number; limit?: number }): Promise<ApiResponse<any[]>> {
+    const qp = new URLSearchParams();
+    if (params?.page) qp.append('page', params.page.toString());
+    if (params?.limit) qp.append('limit', params.limit.toString());
+    return this.request(`/email/campaigns/${id}/recipients?${qp.toString()}`);
+  }
+
   // ==================== AUTOMATION RULES ====================
 
   async getAutomationRules(): Promise<ApiResponse<EmailAutomationRule[]>> {

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ebunlyLogo from '@/assets/ebunly-logo.png';
+import { Breadcrumbs } from './ui/Breadcrumbs';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -266,6 +267,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Main Content */}
         <main className="p-4 sm:p-6 lg:p-8">
+          <Breadcrumbs />
           {children}
         </main>
       </div>

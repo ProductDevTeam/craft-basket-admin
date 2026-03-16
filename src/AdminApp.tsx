@@ -15,6 +15,7 @@ import { EmailTemplatesPage } from './components/email/EmailTemplatesPage';
 import { EmailTemplateFormPage } from './components/email/EmailTemplateFormPage';
 import { EmailCampaignsPage } from './components/email/EmailCampaignsPage';
 import { EmailCampaignFormPage } from './components/email/EmailCampaignFormPage';
+import { EmailCampaignDetailsPage } from './components/email/EmailCampaignDetailsPage';
 import { AutomationRulesPage } from './components/email/AutomationRulesPage';
 import { SubscribersPage } from './components/email/SubscribersPage';
 
@@ -52,6 +53,7 @@ function AdminContent() {
         <Route path="/email/campaigns" element={<EmailCampaignsPage />} />
         <Route path="/email/campaigns/create" element={<EmailCampaignFormPage />} />
         <Route path="/email/campaigns/:id/edit" element={<EmailCampaignFormPage />} />
+        <Route path="/email/campaigns/:id" element={<EmailCampaignDetailsPage />} />
         <Route path="/email/automation" element={<AutomationRulesPage />} />
         <Route path="/email/subscribers" element={<SubscribersPage />} />
       </Routes>
