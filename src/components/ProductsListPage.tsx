@@ -25,6 +25,12 @@ import {
   ChevronDown,
   ArrowLeft,
   User,
+  SearchX,
+  PackageSearch,
+  History,
+  LayoutGrid,
+  List,
+  Check,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
@@ -143,6 +149,7 @@ export function ProductsListPage() {
   ].filter(Boolean).length;
 
   const clearAllFilters = () => {
+    setSearchQuery('');
     setSelectedOccasions([]);
     setSelectedRecipients([]);
     setSelectedPriceRange(null);
@@ -694,7 +701,7 @@ export function ProductsListPage() {
             <Card className="border-0 shadow-sm">
               <CardContent className="py-12">
                 <div className="text-center">
-                  <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <PackageSearch className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                   <p className="text-lg font-medium text-gray-900 mb-2">No products found</p>
                   <p className="text-sm text-gray-500 mb-6">
                     {searchQuery

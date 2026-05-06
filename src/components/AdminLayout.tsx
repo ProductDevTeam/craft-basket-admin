@@ -11,13 +11,26 @@ import {
   Package,
   Users,
   ShoppingCart,
+  ShoppingBag,
   Settings,
   BarChart3,
-  Mail
+  Mail,
+  MoreVertical,
+  Moon,
+  Sun,
+  HelpCircle,
+  ChevronsUpDown,
+  LifeBuoy,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ebunlyLogo from '@/assets/ebunly-logo.png';
 import { Breadcrumbs } from './ui/Breadcrumbs';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -59,7 +72,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     {
       name: 'Products',
       path: '/products',
-      icon: Package,
+      icon: ShoppingBag,
     },
     {
       name: 'Vendors',
@@ -129,28 +142,40 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* User section */}
         <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-ebunly-orange">
-              <span className="text-sm font-semibold text-white">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={logout}
-            className="w-full gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all text-left group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-ebunly-orange shadow-sm shadow-ebunly-orange/20 flex-shrink-0">
+                  <span className="text-sm font-bold text-white uppercase">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">Admin Account</p>
+                </div>
+                <ChevronsUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-900 transition-colors" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-1.5 rounded-xl mb-2 shadow-md border-gray-100" side="top" align="center">
+              <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                <Sun className="w-4 h-4 text-gray-400" />
+                Light Mode
+              </button>
+
+              <div className="h-px bg-gray-50 my-1.5" />
+
+              <button 
+                onClick={logout}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-bold text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
       </aside>
 
@@ -214,28 +239,40 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* User section */}
         <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-ebunly-orange">
-              <span className="text-sm font-semibold text-white">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={logout}
-            className="w-full gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all text-left group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-ebunly-orange shadow-sm shadow-ebunly-orange/20 flex-shrink-0">
+                  <span className="text-sm font-bold text-white uppercase">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">Admin Account</p>
+                </div>
+                <ChevronsUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-900 transition-colors" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-3rem)] max-w-56 p-1.5 rounded-xl mb-4 ml-0 shadow-md border-gray-100" side="top" align="center">
+              <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                <Sun className="w-4 h-4 text-gray-400" />
+                Light Mode
+              </button>
+
+              <div className="h-px bg-gray-50 my-1.5" />
+
+              <button 
+                onClick={logout}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-bold text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            </PopoverContent>
+          </Popover>
         </div>
       </aside>
 
