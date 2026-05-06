@@ -43,7 +43,13 @@ export interface ProductFormData {
   name: string;
   description: string;
   shortDescription?: string;
-  categories: string[]; // Changed to array for multi-category
+  category?: string;
+  // ─── V2 IA Taxonomy ────────────────────────────────────────────────────────
+  subcategory?: string;
+  recipientTags: string[];
+  occasionTags: string[];
+  styleTags: string[];
+  // ─── Legacy (kept for backwards compat) ────────────────────────────────────
   occasion?: string[];
   giftType?: string[];
   basePrice: number;
@@ -62,28 +68,84 @@ export interface ProductFormData {
   tags: string[];
 }
 
-// Filter options for product listing
+// ─── V2 IA Taxonomy Constants ─────────────────────────────────────────────────
+// These must stay in sync with src/constants/taxonomy.ts in the backend.
+
 export const OCCASION_OPTIONS = [
+  // Birthdays
+  'Birthday',
+  // Weddings
+  'Proposal',
+  'Engagement',
+  'Bridal Shower',
   'Wedding',
-  'Corporate Gifting',
-  'Birthdays',
-  'Condolence & Remembrance',
-  'Friends & Loved Ones',
-  'Notable Holidays',
+  'Bridesmaid',
+  'Groomsmen',
+  'Wedding Souvenir',
+  'Honeymoon',
+  // Corporate
+  'Conference',
+  'Employee Appreciation',
+  'Client Appreciation',
+  'Onboarding',
+  'Retirement',
+  // Baby Celebrations
+  'Baby Shower',
+  'Naming Ceremony',
+  'Newborn Welcome',
+  // Milestones
+  'Graduation',
+  'Promotion',
+  'Housewarming',
+  'New Job',
+  // General
+  'Anniversary',
+  'Valentine',
+  "Mother's Day",
+  "Father's Day",
+  'Christmas',
+  'Easter',
+  'Eid',
 ] as const;
 
-export const GIFT_TYPE_OPTIONS = [
-  'For Him',
-  'For Her',
-  'For Kids',
-  'Boxes & Hampers',
-  'Beauty & Grooming',
-  'Keepsakes',
-  'Accessories',
-  'Home And Decor',
-  'Personalised Gifts',
-  'Flowers & Cards',
+export const RECIPIENT_OPTIONS = [
+  'Women',
+  'Men',
+  'Couples',
+  'Kids',
+  'Babies',
+  'Mothers',
+  'Fathers',
+  'Friends',
+  'Colleagues',
 ] as const;
+
+export const STYLE_TAG_OPTIONS = [
+  'Luxury',
+  'Budget-Friendly',
+  'Wellness',
+  'Eco-Friendly',
+  'Funny',
+  'Romantic',
+  'Minimalist',
+  'Bold',
+  'Traditional',
+  'Modern',
+] as const;
+
+/** Maps each core category to its valid subcategories */
+export const SUBCATEGORIES_MAP: Record<string, readonly string[]> = {
+  'Gift Boxes': ['Self-care Boxes', 'Snack Boxes', 'Luxury Boxes', 'Birthday Boxes', 'Corporate Boxes'],
+  'Food & Treats': ['Snacks', 'Chocolates', 'Cakes', 'Gourmet Packs', 'Drinks'],
+  'Fashion & Accessories': ['Women Fashion', 'Men Fashion', 'Bags', 'Shoes', 'Watches'],
+  'Beauty & Self-care': ['Skincare', 'Perfumes', 'Spa Kits', 'Haircare'],
+  'Personalized Gifts': ['Custom Mugs', 'Custom Frames', 'Custom Shirts', 'Engraved Gifts'],
+};
+
+export const CORE_CATEGORY_OPTIONS = Object.keys(SUBCATEGORIES_MAP) as string[];
+
+// ─── Legacy (kept for backwards compat with any existing code) ────────────────
+export const GIFT_TYPE_OPTIONS = RECIPIENT_OPTIONS;
 
 export const PERSONALIZATION_TYPE_OPTIONS: { value: PersonalizationType; label: string }[] = [
   { value: 'none', label: 'No Personalization' },

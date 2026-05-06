@@ -104,7 +104,7 @@ export function AutomationRulesPage() {
           isEnabled: formEnabled,
           template: formTemplate || undefined,
           subject: formSubject,
-        } as Partial<EmailAutomationRule>);
+        } as any);
         toast.success('Rule updated');
       } else {
         await apiClient.createAutomationRule({
@@ -113,7 +113,7 @@ export function AutomationRulesPage() {
           isEnabled: formEnabled,
           template: formTemplate || undefined,
           subject: formSubject,
-        });
+        } as any);
         toast.success('Rule created');
       }
       setShowForm(false);
@@ -149,10 +149,6 @@ export function AutomationRulesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/email')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Email
-            </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Automation Rules</h1>
               <p className="text-sm text-gray-500">Configure automated email triggers</p>

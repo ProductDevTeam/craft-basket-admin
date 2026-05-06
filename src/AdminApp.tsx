@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { LoginPage } from './components/LoginPage';
 import { AdminLayout } from './components/AdminLayout';
 import { DashboardPage } from './components/DashboardPage';
@@ -15,6 +16,7 @@ import { EmailTemplatesPage } from './components/email/EmailTemplatesPage';
 import { EmailTemplateFormPage } from './components/email/EmailTemplateFormPage';
 import { EmailCampaignsPage } from './components/email/EmailCampaignsPage';
 import { EmailCampaignFormPage } from './components/email/EmailCampaignFormPage';
+import { EmailCampaignDetailsPage } from './components/email/EmailCampaignDetailsPage';
 import { AutomationRulesPage } from './components/email/AutomationRulesPage';
 import { SubscribersPage } from './components/email/SubscribersPage';
 
@@ -52,6 +54,7 @@ function AdminContent() {
         <Route path="/email/campaigns" element={<EmailCampaignsPage />} />
         <Route path="/email/campaigns/create" element={<EmailCampaignFormPage />} />
         <Route path="/email/campaigns/:id/edit" element={<EmailCampaignFormPage />} />
+        <Route path="/email/campaigns/:id" element={<EmailCampaignDetailsPage />} />
         <Route path="/email/automation" element={<AutomationRulesPage />} />
         <Route path="/email/subscribers" element={<SubscribersPage />} />
       </Routes>
@@ -65,7 +68,9 @@ export default function AdminApp() {
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <AuthProvider>
-        <AdminContent />
+        <TooltipProvider delayDuration={100}>
+          <AdminContent />
+        </TooltipProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

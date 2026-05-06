@@ -164,10 +164,6 @@ export function EmailCampaignsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/email')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Email
-            </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
               <p className="text-sm text-gray-500">Create and send email campaigns</p>
@@ -253,6 +249,11 @@ export function EmailCampaignsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {['sent', 'sending', 'scheduled'].includes(campaign.status) && (
+                            <Button variant="ghost" size="sm" onClick={() => navigate(`/email/campaigns/${campaign._id}`)}>
+                              <Eye className="w-4 h-4 text-blue-600" />
+                            </Button>
+                          )}
                           {['draft', 'scheduled'].includes(campaign.status) && (
                             <Button variant="ghost" size="sm" onClick={() => navigate(`/email/campaigns/${campaign._id}/edit`)}>
                               <Edit className="w-4 h-4" />
