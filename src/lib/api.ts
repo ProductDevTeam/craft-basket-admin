@@ -99,8 +99,16 @@ class ApiClient {
     minDiscount?: number;
     madeInNigeria?: boolean;
     maxDeliveryDays?: number;
+    // V2 IA Taxonomy
+    recipients?: string[];
+    occasionTags?: string[];
+    styleTags?: string[];
+    budgetTier?: string;
+    subcategory?: string;
+    // Legacy
     occasions?: string[];
     giftTypes?: string[];
+    sort?: string;
   }): Promise<ApiResponse<any[]>> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -116,6 +124,20 @@ class ApiClient {
       queryParams.append('madeInNigeria', params.madeInNigeria.toString());
     if (params?.maxDeliveryDays !== undefined)
       queryParams.append('maxDeliveryDays', params.maxDeliveryDays.toString());
+    if (params?.sort) queryParams.append('sort', params.sort);
+    // V2 IA Taxonomy
+    if (params?.recipients && params.recipients.length > 0) {
+      params.recipients.forEach((r) => queryParams.append('recipients', r));
+    }
+    if (params?.occasionTags && params.occasionTags.length > 0) {
+      params.occasionTags.forEach((o) => queryParams.append('occasionTags', o));
+    }
+    if (params?.styleTags && params.styleTags.length > 0) {
+      params.styleTags.forEach((s) => queryParams.append('styleTags', s));
+    }
+    if (params?.budgetTier) queryParams.append('budgetTier', params.budgetTier);
+    if (params?.subcategory) queryParams.append('subcategory', params.subcategory);
+    // Legacy
     if (params?.occasions && params.occasions.length > 0) {
       params.occasions.forEach((occ) => queryParams.append('occasions', occ));
     }

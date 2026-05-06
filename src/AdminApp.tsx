@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { LoginPage } from './components/LoginPage';
 import { AdminLayout } from './components/AdminLayout';
 import { DashboardPage } from './components/DashboardPage';
@@ -67,7 +68,9 @@ export default function AdminApp() {
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <AuthProvider>
-        <AdminContent />
+        <TooltipProvider delayDuration={100}>
+          <AdminContent />
+        </TooltipProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

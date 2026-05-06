@@ -6,7 +6,10 @@ import {
   KeyInfo,
   PersonalizationType,
   OCCASION_OPTIONS,
-  GIFT_TYPE_OPTIONS,
+  RECIPIENT_OPTIONS,
+  STYLE_TAG_OPTIONS,
+  SUBCATEGORIES_MAP,
+  CORE_CATEGORY_OPTIONS,
   PERSONALIZATION_TYPE_OPTIONS,
 } from '../types';
 import { Button } from '@/components/ui/button';
@@ -35,11 +38,11 @@ import {
   ArrowRight,
   ChevronsUpDown,
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, PageTransition } from '@/lib/motion';
 import { FormSkeleton } from '@/components/ui/skeletons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Command,
   CommandEmpty,
@@ -78,6 +81,13 @@ export function CreateProductPage() {
   const [vendorId, setVendorId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  // Form state — V2 IA Taxonomy
+  const [selectedCoreCategory, setSelectedCoreCategory] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [selectedOccasionTags, setSelectedOccasionTags] = useState<string[]>([]);
+  const [selectedStyleTags, setSelectedStyleTags] = useState<string[]>([]);
+  // Legacy form state
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [selectedGiftTypes, setSelectedGiftTypes] = useState<string[]>([]);
   const [basePrice, setBasePrice] = useState('');
@@ -113,6 +123,10 @@ export function CreateProductPage() {
   // Validation touch state for highlighting required fields
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const setTouchedField = (name: string) => setTouched((prev) => ({ ...prev, [name]: true }));
+
+  // Subcategory options derived from selected core category
+  const subcategoryOptions = selectedCoreCategory ? SUBCATEGORIES_MAP[selectedCoreCategory] ?? [] : [];
+
   const markStepTouched = (step: number) => {
     switch (step) {
       case 1:
@@ -122,8 +136,8 @@ export function CreateProductPage() {
           name: true,
           description: true,
           sku: true,
-          giftTypes: true,
-          occasions: true,
+          recipients: true,
+          occasionTags: true,
         }));
         break;
       case 2:
@@ -137,18 +151,36 @@ export function CreateProductPage() {
     }
   };
 
-  // Toggle occasion selection
+  // Toggle handlers for all chip-select fields
   const toggleOccasion = (occasion: string) => {
     setSelectedOccasions((prev) =>
       prev.includes(occasion) ? prev.filter((o) => o !== occasion) : [...prev, occasion]
     );
   };
-
-  // Toggle gift type selection
   const toggleGiftType = (giftType: string) => {
     setSelectedGiftTypes((prev) =>
       prev.includes(giftType) ? prev.filter((g) => g !== giftType) : [...prev, giftType]
     );
+  };
+  const toggleRecipient = (r: string) => {
+    setSelectedRecipients((prev) =>
+      prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]
+    );
+  };
+  const toggleOccasionTag = (o: string) => {
+    setSelectedOccasionTags((prev) =>
+      prev.includes(o) ? prev.filter((x) => x !== o) : [...prev, o]
+    );
+  };
+  const toggleStyleTag = (s: string) => {
+    setSelectedStyleTags((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+    );
+  };
+  // When core category changes, reset subcategory
+  const handleCoreCategoryChange = (cat: string) => {
+    setSelectedCoreCategory(cat);
+    setSelectedSubcategory('');
   };
 
   const loadData = useCallback(async () => {
@@ -169,6 +201,19 @@ export function CreateProductPage() {
           setVendorId(product.vendor?._id || product.vendor || '');
           setName(product.name || '');
           setDescription(product.description || '');
+          // V2 IA Taxonomy
+          setSelectedOccasionTags(product.occasionTags || []);
+          setSelectedRecipients(product.recipientTags || []);
+          setSelectedStyleTags(product.styleTags || []);
+          if (product.subcategory) {
+            // Reverse-look up the core category from the subcategory value
+            const parentCat = Object.entries(SUBCATEGORIES_MAP).find(([, subs]) =>
+              (subs as readonly string[]).includes(product.subcategory)
+            )?.[0] ?? '';
+            setSelectedCoreCategory(parentCat);
+            setSelectedSubcategory(product.subcategory);
+          }
+          // Legacy
           setSelectedOccasions(product.occasion || []);
           setSelectedGiftTypes(product.giftType || []);
           setBasePrice(product.basePrice?.toString() || '');
@@ -332,6 +377,13 @@ export function CreateProductPage() {
     setVendorId('');
     setName('');
     setDescription('');
+    // V2 IA
+    setSelectedCoreCategory('');
+    setSelectedSubcategory('');
+    setSelectedRecipients([]);
+    setSelectedOccasionTags([]);
+    setSelectedStyleTags([]);
+    // Legacy
     setSelectedOccasions([]);
     setSelectedGiftTypes([]);
     setBasePrice('');
@@ -365,9 +417,9 @@ export function CreateProductPage() {
           toast.error('Please fill in all required fields');
           return false;
         }
-        if (selectedGiftTypes.length === 0 && selectedOccasions.length === 0) {
+        if (selectedRecipients.length === 0) {
           markStepTouched(1);
-          toast.error('Please select at least one Gift Type or Occasion');
+          toast.error('Please select at least one recipient (who is this gift for?)');
           return false;
         }
         return true;
@@ -440,6 +492,12 @@ export function CreateProductPage() {
       formData.append('vendorId', vendorId);
       formData.append('name', name);
       formData.append('description', description);
+      // V2 IA Taxonomy
+      if (selectedRecipients.length) formData.append('recipientTags', JSON.stringify(selectedRecipients));
+      if (selectedOccasionTags.length) formData.append('occasionTags', JSON.stringify(selectedOccasionTags));
+      if (selectedStyleTags.length) formData.append('styleTags', JSON.stringify(selectedStyleTags));
+      if (selectedSubcategory) formData.append('subcategory', selectedSubcategory);
+      // Legacy (kept for backwards compat)
       if (selectedOccasions.length) formData.append('occasion', JSON.stringify(selectedOccasions));
       if (selectedGiftTypes.length) formData.append('giftType', JSON.stringify(selectedGiftTypes));
       formData.append('basePrice', basePrice);
@@ -620,13 +678,16 @@ export function CreateProductPage() {
                   <CardDescription>Select the vendor and enter product details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     {/* Vendor Dropdown with Search */}
                     <div className="space-y-2">
-                      <Label htmlFor="vendor">Vendor *</Label>
+                      <div className="flex items-center gap-2 min-h-[24px]">
+                        <Label htmlFor="vendor">Vendor *</Label>
+                      </div>
                       <Popover open={vendorSearchOpen} onOpenChange={setVendorSearchOpen}>
                         <PopoverTrigger asChild>
                           <Button
+                            type="button"
                             variant="outline"
                             role="combobox"
                             aria-expanded={vendorSearchOpen}
@@ -650,7 +711,7 @@ export function CreateProductPage() {
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0" align="start">
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                           <Command>
                             <CommandInput placeholder="Search vendors..." />
                             <CommandList>
@@ -689,9 +750,8 @@ export function CreateProductPage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-h-[24px]">
                         <Label htmlFor="sku">SKU *</Label>
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Info className="w-4 h-4 text-gray-400 cursor-help" />
@@ -703,7 +763,6 @@ export function CreateProductPage() {
                               </p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
                       </div>
                       <Input
                         id="sku"
@@ -723,13 +782,11 @@ export function CreateProductPage() {
                     </div>
                   </div>
 
-                  {/* Occasions - Multi-select with Chips */}
+                  {/* ── Occasion Tags (V2) ─────────────────────────────────── */}
                   <div className="space-y-2">
                     <Label>
-                      Occasion *{' '}
-                      <span className="text-gray-500 font-normal">
-                        (Select at least one occasion or gift type)
-                      </span>
+                      Occasion Tags{' '}
+                      <span className="text-gray-500 font-normal">(Optional — select all that apply)</span>
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {OCCASION_OPTIONS.map((occasion) => (
@@ -737,22 +794,22 @@ export function CreateProductPage() {
                           key={occasion}
                           type="button"
                           onClick={() => {
-                            toggleOccasion(occasion);
-                            setTouchedField('occasions');
+                            toggleOccasionTag(occasion);
+                            setTouchedField('occasionTags');
                           }}
                           className={cn(
                             'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                            selectedOccasions.includes(occasion)
+                            selectedOccasionTags.includes(occasion)
                               ? 'border-transparent text-white'
-                              : 'border-gray-300 text-gray-700 bg-white'
+                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
                           )}
                           style={
-                            selectedOccasions.includes(occasion)
+                            selectedOccasionTags.includes(occasion)
                               ? { backgroundColor: '#F6511E' }
                               : {}
                           }
                         >
-                          {selectedOccasions.includes(occasion) && (
+                          {selectedOccasionTags.includes(occasion) && (
                             <Check className="w-3 h-3 inline mr-1" />
                           )}
                           {occasion}
@@ -761,49 +818,114 @@ export function CreateProductPage() {
                     </div>
                   </div>
 
-                  {/* Gift Types - Multi-select with Chips */}
+                  {/* ── Recipients (V2 — Required) ─────────────────────────── */}
                   <div className="space-y-2">
                     <Label>
-                      Gift Type *{' '}
-                      <span className="text-gray-500 font-normal">
-                        (Select at least one occasion or gift type)
-                      </span>
+                      Who is this gift for? *{' '}
+                      <span className="text-gray-500 font-normal">(Select at least one)</span>
                     </Label>
                     <div className="flex flex-wrap gap-2">
-                      {GIFT_TYPE_OPTIONS.map((giftType) => (
+                      {RECIPIENT_OPTIONS.map((recipient) => (
                         <button
-                          key={giftType}
+                          key={recipient}
                           type="button"
                           onClick={() => {
-                            toggleGiftType(giftType);
-                            setTouchedField('giftTypes');
+                            toggleRecipient(recipient);
+                            setTouchedField('recipients');
                           }}
                           className={cn(
                             'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                            selectedGiftTypes.includes(giftType)
+                            selectedRecipients.includes(recipient)
                               ? 'border-transparent text-white'
-                              : 'border-gray-300 text-gray-700 bg-white'
+                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
                           )}
                           style={
-                            selectedGiftTypes.includes(giftType)
+                            selectedRecipients.includes(recipient)
                               ? { backgroundColor: '#F6511E' }
                               : {}
                           }
                         >
-                          {selectedGiftTypes.includes(giftType) && (
+                          {selectedRecipients.includes(recipient) && (
                             <Check className="w-3 h-3 inline mr-1" />
                           )}
-                          {giftType}
+                          {recipient}
                         </button>
                       ))}
                     </div>
-                    {selectedGiftTypes.length === 0 &&
-                      selectedOccasions.length === 0 &&
-                      (isSubmitting || touched.giftTypes || touched.occasions) && (
-                        <p className="text-sm text-red-600 mt-1">
-                          Please select at least one occasion or gift type
-                        </p>
-                      )}
+                    {selectedRecipients.length === 0 && (isSubmitting || touched.recipients) && (
+                      <p className="text-sm text-red-600 mt-1">
+                        Please select who this gift is for
+                      </p>
+                    )}
+                  </div>
+
+                  {/* ── Category & Subcategory (V2) ────────────────────────── */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="coreCategory">Category</Label>
+                      <Select value={selectedCoreCategory} onValueChange={handleCoreCategoryChange}>
+                        <SelectTrigger id="coreCategory" type="button">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CORE_CATEGORY_OPTIONS.map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subcategory">Subcategory</Label>
+                      <Select
+                        value={selectedSubcategory}
+                        onValueChange={setSelectedSubcategory}
+                        disabled={subcategoryOptions.length === 0}
+                      >
+                        <SelectTrigger id="subcategory" type="button">
+                          <SelectValue placeholder={
+                            selectedCoreCategory ? 'Select a subcategory' : 'Select a category first'
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subcategoryOptions.map((sub) => (
+                            <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* ── Style Tags (V2 — Optional) ─────────────────────────── */}
+                  <div className="space-y-2">
+                    <Label>
+                      Style / Vibe Tags{' '}
+                      <span className="text-gray-500 font-normal">(Optional)</span>
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {STYLE_TAG_OPTIONS.map((style) => (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => toggleStyleTag(style)}
+                          className={cn(
+                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                            selectedStyleTags.includes(style)
+                              ? 'border-transparent text-white'
+                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
+                          )}
+                          style={
+                            selectedStyleTags.includes(style)
+                              ? { backgroundColor: '#F6511E' }
+                              : {}
+                          }
+                        >
+                          {selectedStyleTags.includes(style) && (
+                            <Check className="w-3 h-3 inline mr-1" />
+                          )}
+                          {style}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -828,7 +950,6 @@ export function CreateProductPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="description">Description *</Label>
-                      <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="w-4 h-4 text-gray-400 cursor-help" />
@@ -840,7 +961,6 @@ export function CreateProductPage() {
                             </p>
                           </TooltipContent>
                         </Tooltip>
-                      </TooltipProvider>
                     </div>
                     <Textarea
                       id="description"
@@ -1055,9 +1175,11 @@ export function CreateProductPage() {
                   <CardDescription>Set pricing and stock information</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                     <div className="space-y-2">
-                      <Label htmlFor="basePrice">Base Price (₦) *</Label>
+                      <div className="flex items-center gap-2 min-h-[24px]">
+                        <Label htmlFor="basePrice">Base Price (₦) *</Label>
+                      </div>
                       <Input
                         id="basePrice"
                         type="number"
@@ -1078,9 +1200,8 @@ export function CreateProductPage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-h-[24px]">
                         <Label htmlFor="discountPercentage">Discount (%)</Label>
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
@@ -1091,7 +1212,6 @@ export function CreateProductPage() {
                               </p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
                       </div>
                       <Input
                         id="discountPercentage"
@@ -1105,7 +1225,9 @@ export function CreateProductPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="stock">Stock Quantity</Label>
+                      <div className="flex items-center gap-2 min-h-[24px]">
+                        <Label htmlFor="stock">Stock Quantity</Label>
+                      </div>
                       <Input
                         id="stock"
                         type="number"
@@ -1181,9 +1303,11 @@ export function CreateProductPage() {
                   <CardDescription>Add additional product information</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                     <div className="space-y-2">
-                      <Label htmlFor="weight">Weight</Label>
+                      <div className="flex items-center gap-2 min-h-[24px]">
+                        <Label htmlFor="weight">Weight</Label>
+                      </div>
                       <Input
                         id="weight"
                         value={weight}
@@ -1192,7 +1316,9 @@ export function CreateProductPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="color">Color</Label>
+                      <div className="flex items-center gap-2 min-h-[24px]">
+                        <Label htmlFor="color">Color</Label>
+                      </div>
                       <Input
                         id="color"
                         value={color}
@@ -1201,9 +1327,8 @@ export function CreateProductPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-h-[24px]">
                         <Label htmlFor="estimatedDeliveryDays">Est. Delivery (days)</Label>
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Info className="w-4 h-4 text-gray-400 cursor-help" />
@@ -1214,7 +1339,6 @@ export function CreateProductPage() {
                               </p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
                       </div>
                       <Input
                         id="estimatedDeliveryDays"
@@ -1302,7 +1426,6 @@ export function CreateProductPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Label>Key Information</Label>
-                        <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
@@ -1314,7 +1437,6 @@ export function CreateProductPage() {
                               </p>
                             </TooltipContent>
                           </Tooltip>
-                        </TooltipProvider>
                       </div>
                       <Button type="button" variant="outline" size="sm" onClick={addKeyInfo}>
                         <Plus className="w-4 h-4 mr-1" /> Add More
@@ -1382,7 +1504,7 @@ export function CreateProductPage() {
                         setPersonalizationType(value as PersonalizationType)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger type="button">
                         <SelectValue placeholder="Select personalization type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1410,15 +1532,15 @@ export function CreateProductPage() {
                 <CardContent>
                   <div className="flex flex-wrap gap-6">
                     <div className="flex items-center gap-2">
-                      <Switch checked={isBestSeller} onCheckedChange={setIsBestSeller} />
+                      <Switch type="button" checked={isBestSeller} onCheckedChange={setIsBestSeller} />
                       <Label>Best Seller</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
+                      <Switch type="button" checked={isFeatured} onCheckedChange={setIsFeatured} />
                       <Label>Featured</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Switch checked={isMadeInNigeria} onCheckedChange={setIsMadeInNigeria} />
+                      <Switch type="button" checked={isMadeInNigeria} onCheckedChange={setIsMadeInNigeria} />
                       <Label>Made in Nigeria 🇳🇬</Label>
                     </div>
                   </div>
@@ -1489,7 +1611,8 @@ export function CreateProductPage() {
             ) : (
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={(e) => handleSubmit(e as unknown as React.FormEvent)}
                   disabled={isSubmitting}
                   className="text-white px-8 hover:opacity-90 transition-opacity"
                   style={{ backgroundColor: '#F6511E' }}
