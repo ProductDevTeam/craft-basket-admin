@@ -340,6 +340,44 @@ class ApiClient {
   }): Promise<ApiResponse<{ sent: boolean }>> {
     return this.request('/email/test', { method: 'POST', body: JSON.stringify(data) });
   }
+
+  // ==================== CATEGORIES ====================
+
+  async getCategories(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    activeOnly?: boolean;
+  }): Promise<ApiResponse<any[]>> {
+    const qp = new URLSearchParams();
+    if (params?.page) qp.append('page', params.page.toString());
+    if (params?.limit) qp.append('limit', params.limit.toString());
+    if (params?.search) qp.append('search', params.search);
+    if (params?.activeOnly) qp.append('activeOnly', 'true');
+    return this.request(`/categories?${qp.toString()}`);
+  }
+
+  async getCategory(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/categories/${id}`);
+  }
+
+  async createCategory(formData: FormData): Promise<ApiResponse<any>> {
+    return this.request('/categories', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async updateCategory(id: string, formData: FormData): Promise<ApiResponse<any>> {
+    return this.request(`/categories/${id}`, {
+      method: 'PUT',
+      body: formData,
+    });
+  }
+
+  async deleteCategory(id: string): Promise<ApiResponse<null>> {
+    return this.request(`/categories/${id}`, { method: 'DELETE' });
+  }
 }
 
 export const apiClient = new ApiClient();

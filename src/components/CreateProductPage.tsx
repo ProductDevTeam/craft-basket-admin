@@ -77,6 +77,10 @@ export function CreateProductPage() {
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [vendorSearchOpen, setVendorSearchOpen] = useState(false);
 
+  // DB Categories (for the Figma hierarchy)
+  const [dbCategories, setDbCategories] = useState<Array<{ _id: string; name: string; parent?: { _id: string; name: string } | null }>>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+
   // Form state
   const [vendorId, setVendorId] = useState('');
   const [name, setName] = useState('');
@@ -185,10 +189,16 @@ export function CreateProductPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const vendorsRes = await apiClient.getVendors();
+      const [vendorsRes, categoriesRes] = await Promise.all([
+        apiClient.getVendors(),
+        apiClient.getCategories({ limit: 200, activeOnly: true }),
+      ]);
 
       if (vendorsRes.success && vendorsRes.data) {
         setVendors(vendorsRes.data);
+      }
+      if (categoriesRes.success && categoriesRes.data) {
+        setDbCategories(categoriesRes.data);
       }
 
       // Load product data if in edit mode
@@ -212,6 +222,11 @@ export function CreateProductPage() {
             )?.[0] ?? '';
             setSelectedCoreCategory(parentCat);
             setSelectedSubcategory(product.subcategory);
+          }
+          // DB Category (for Figma hierarchy)
+          if (product.category) {
+            const catId = typeof product.category === 'object' ? product.category._id : product.category;
+            setSelectedCategoryId(catId || '');
           }
           // Legacy
           setSelectedOccasions(product.occasion || []);
@@ -497,6 +512,7 @@ export function CreateProductPage() {
       if (selectedOccasionTags.length) formData.append('occasionTags', JSON.stringify(selectedOccasionTags));
       if (selectedStyleTags.length) formData.append('styleTags', JSON.stringify(selectedStyleTags));
       if (selectedSubcategory) formData.append('subcategory', selectedSubcategory);
+      if (selectedCategoryId) formData.append('category', selectedCategoryId);
       // Legacy (kept for backwards compat)
       if (selectedOccasions.length) formData.append('occasion', JSON.stringify(selectedOccasions));
       if (selectedGiftTypes.length) formData.append('giftType', JSON.stringify(selectedGiftTypes));
@@ -859,13 +875,53 @@ export function CreateProductPage() {
                     )}
                   </div>
 
-                  {/* ── Category & Subcategory (V2) ────────────────────────── */}
+                  {/* ── Primary Category (DB-backed for frontend) ────────── */}
+                  <div className="space-y-2">
+                    <Label htmlFor="primaryCategory">
+                      Primary Category{' '}
+                      <span className="text-gray-500 font-normal">(Storefront)</span>
+                    </Label>
+                    <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                      <SelectTrigger id="primaryCategory" type="button">
+                        <SelectValue placeholder="Select a storefront category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {dbCategories
+                          .filter((c) => !c.parent && c.isActive)
+                          .map((parent) => {
+                            const children = dbCategories.filter(
+                              (ch) => ch.parent && 
+                                (typeof ch.parent === 'object' ? ch.parent._id : ch.parent) === parent._id &&
+                                ch.isActive
+                            );
+                            return (
+                              <React.Fragment key={parent._id}>
+                                <SelectItem value={parent._id} className="font-semibold">
+                                  {parent.name}
+                                </SelectItem>
+                                {children.map((child) => (
+                                  <SelectItem key={child._id} value={child._id} className="pl-6">
+                                    ↳ {child.name}
+                                  </SelectItem>
+                                ))}
+                              </React.Fragment>
+                            );
+                          })}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-400">
+                      This is the category shown on the storefront. Manage categories from the sidebar.
+                    </p>
+                  </div>
+
+                  {/* ── Category & Subcategory (V2 IA Tags) ──────────────── */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="coreCategory">Category</Label>
+                      <Label htmlFor="coreCategory">Tag Category</Label>
                       <Select value={selectedCoreCategory} onValueChange={handleCoreCategoryChange}>
                         <SelectTrigger id="coreCategory" type="button">
-                          <SelectValue placeholder="Select a category" />
+                          <SelectValue placeholder="Select a tag category" />
                         </SelectTrigger>
                         <SelectContent>
                           {CORE_CATEGORY_OPTIONS.map((cat) => (
@@ -875,7 +931,7 @@ export function CreateProductPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="subcategory">Subcategory</Label>
+                      <Label htmlFor="subcategory">Subcategory Tag</Label>
                       <Select
                         value={selectedSubcategory}
                         onValueChange={setSelectedSubcategory}
@@ -883,7 +939,7 @@ export function CreateProductPage() {
                       >
                         <SelectTrigger id="subcategory" type="button">
                           <SelectValue placeholder={
-                            selectedCoreCategory ? 'Select a subcategory' : 'Select a category first'
+                            selectedCoreCategory ? 'Select a subcategory' : 'Select a tag category first'
                           } />
                         </SelectTrigger>
                         <SelectContent>

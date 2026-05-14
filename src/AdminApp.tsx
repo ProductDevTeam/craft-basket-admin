@@ -8,6 +8,7 @@ import { AdminLayout } from './components/AdminLayout';
 import { DashboardPage } from './components/DashboardPage';
 import { CreateProductPage } from './components/CreateProductPage';
 import { ProductsListPage } from './components/ProductsListPage';
+import { CategoriesPage } from './components/CategoriesPage';
 import { ProductViewPage } from './components/ProductViewPage';
 import { VendorsPage } from './components/VendorsPage';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -46,6 +47,7 @@ function AdminContent() {
         <Route path="/products/:id" element={<ProductViewPage />} />
         <Route path="/create-product" element={<CreateProductPage />} />
         <Route path="/edit-product/:id" element={<CreateProductPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/vendors" element={<VendorsPage />} />
         <Route path="/email" element={<EmailOverviewPage />} />
         <Route path="/email/templates" element={<EmailTemplatesPage />} />
