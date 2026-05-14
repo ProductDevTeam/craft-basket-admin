@@ -414,7 +414,7 @@ export function CategoriesPage() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
                 {parentCategories.map((cat) => {
                   const isSelected = cat._id === selectedParentId;
                   const childCount = categories.filter((c) => {
@@ -537,7 +537,7 @@ export function CategoriesPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto pr-1">
                     <AnimatePresence>
                       {childCategories.map((child, idx) => (
                         <motion.div
