@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { CategoriesPageSkeleton } from '@/components/ui/skeletons';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -307,14 +308,6 @@ export function CategoriesPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-32">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -363,7 +356,9 @@ export function CategoriesPage() {
       </div>
 
       {/* Master-Detail Layout */}
-      {parentCategories.length === 0 && (searchQuery || statusFilter !== 'all') ? (
+      {isLoading ? (
+        <CategoriesPageSkeleton />
+      ) : parentCategories.length === 0 && (searchQuery || statusFilter !== 'all') ? (
         <div className="flex flex-col items-center justify-center py-40 text-center bg-white rounded-2xl border border-gray-200">
           <p className="text-gray-400 font-medium">
             No {statusFilter !== 'all' ? statusFilter : ''} categories match your search

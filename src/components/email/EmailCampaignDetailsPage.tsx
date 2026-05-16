@@ -1,37 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  ArrowLeft, 
-  Send, 
-  MailOpen, 
-  MousePointer2, 
-  AlertCircle, 
-  CheckCircle2,
-  Users,
-  Clock,
-  ExternalLink,
-  Loader2
+import {
+  Send, MailOpen, MousePointer2, AlertCircle, CheckCircle2,
+  Users, Clock, ExternalLink, Loader2, TrendingUp,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { PageTransition } from '@/lib/motion';
-import { FormSkeleton } from '@/components/ui/skeletons';
+import { CampaignDetailsSkeleton } from '@/components/ui/skeletons';
 import type { EmailCampaign } from '@/types';
 
 interface Recipient {
   _id: string;
   status: 'sent' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed';
   lastEvent: string;
-  events: Array<{
-    type: string;
-    timestamp: string;
-    link?: string;
-  }>;
+  events: Array<{ type: string; timestamp: string; link?: string }>;
 }
+
+const STATUS_BADGE: Record<string, string> = {
+  sent:         'bg-green-50 text-green-700',
+  opened:       'bg-blue-50 text-blue-700',
+  clicked:      'bg-purple-50 text-purple-700',
+  bounced:      'bg-red-50 text-red-700',
+  unsubscribed: 'bg-gray-100 text-gray-500',
+};
+
+const EVENT_COLORS: Record<string, string> = {
+  sent:    'bg-gray-100 text-gray-600',
+  opened:  'bg-blue-50 text-blue-600',
+  clicked: 'bg-purple-50 text-purple-600',
+};
 
 export function EmailCampaignDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,17 +44,8 @@ export function EmailCampaignDetailsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    if (id) {
-      fetchData();
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (id) {
-      fetchRecipients();
-    }
-  }, [id, page]);
+  useEffect(() => { if (id) fetchData(); }, [id]);
+  useEffect(() => { if (id) fetchRecipients(); }, [id, page]);
 
   const fetchData = async () => {
     try {
@@ -64,7 +55,7 @@ export function EmailCampaignDetailsPage() {
         setCampaign(res.data.campaign);
         setStats(res.data.stats);
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to load campaign analytics');
     } finally {
       setIsLoading(false);
@@ -79,213 +70,180 @@ export function EmailCampaignDetailsPage() {
         setRecipients(res.data as any);
         setTotalPages(res.meta?.totalPages || 1);
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to load recipients');
     } finally {
       setIsRecipientsLoading(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      sent: 'bg-blue-100 text-blue-800',
-      opened: 'bg-green-100 text-green-800',
-      clicked: 'bg-purple-100 text-purple-800',
-      bounced: 'bg-red-100 text-red-800',
-      unsubscribed: 'bg-gray-100 text-gray-800',
-    };
-    return <Badge className={styles[status] || 'bg-gray-100'}>{status}</Badge>;
-  };
-
-  if (isLoading) {
-    return <FormSkeleton />;
-  }
-
+  if (isLoading) return <CampaignDetailsSkeleton />;
   if (!campaign) {
     return (
-      <div className="text-center py-20">
-        <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <h2 className="text-xl font-bold">Campaign Not Found</h2>
-        <Button variant="ghost" className="mt-4" onClick={() => navigate('/email/campaigns')}>
-          Back to Campaigns
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <AlertCircle className="w-12 h-12 text-gray-300 mb-4" />
+        <h2 className="text-lg font-semibold text-gray-700">Campaign not found</h2>
+        <Button variant="ghost" className="mt-4 rounded-xl" onClick={() => navigate('/email/campaigns')}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Campaigns
         </Button>
       </div>
     );
   }
 
-  const openRate = campaign.totalRecipients > 0 
-    ? ((stats.uniqueOpens || 0) / campaign.totalRecipients * 100).toFixed(1)
-    : '0.0';
-  
+  const openRate = campaign.totalRecipients > 0
+    ? ((stats.uniqueOpens || 0) / campaign.totalRecipients * 100).toFixed(1) : '0.0';
   const clickRate = campaign.totalRecipients > 0
-    ? ((stats.uniqueClicks || 0) / campaign.totalRecipients * 100).toFixed(1)
-    : '0.0';
+    ? ((stats.uniqueClicks || 0) / campaign.totalRecipients * 100).toFixed(1) : '0.0';
+  const deliveryRate = campaign.totalRecipients > 0
+    ? (((stats.sent || campaign.successCount || 0) / campaign.totalRecipients) * 100).toFixed(1) : '0.0';
+
+  const statCards = [
+    {
+      label: 'Delivery',
+      value: `${stats.sent || campaign.successCount || 0} / ${campaign.totalRecipients || 0}`,
+      sub: `${deliveryRate}% success rate`,
+      icon: <Send className="w-5 h-5" />,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
+      highlight: false,
+    },
+    {
+      label: 'Open Rate',
+      value: `${openRate}%`,
+      sub: `${stats.uniqueOpens || 0} unique opens`,
+      icon: <MailOpen className="w-5 h-5" />,
+      color: 'text-green-600',
+      bg: 'bg-green-50',
+      highlight: parseFloat(openRate) > 20,
+    },
+    {
+      label: 'Click Rate',
+      value: `${clickRate}%`,
+      sub: `${stats.uniqueClicks || 0} unique clicks`,
+      icon: <MousePointer2 className="w-5 h-5" />,
+      color: 'text-purple-600',
+      bg: 'bg-purple-50',
+      highlight: parseFloat(clickRate) > 5,
+    },
+    {
+      label: 'Bounce / Unsub',
+      value: `${(stats.bounced || 0) + (stats.unsubscribed || 0)}`,
+      sub: `${stats.bounced || 0} bounces, ${stats.unsubscribed || 0} unsubs`,
+      icon: <AlertCircle className="w-5 h-5" />,
+      color: 'text-red-600',
+      bg: 'bg-red-50',
+      highlight: false,
+    },
+  ];
 
   return (
     <PageTransition>
       <div className="space-y-6">
+
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{campaign.name}</h1>
-              <p className="text-sm text-gray-500">Subject: {campaign.subject}</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-gray-900 truncate">{campaign.name}</h1>
+              <p className="text-xs text-gray-400 truncate mt-0.5">Subject: {campaign.subject}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-             <Button variant="outline" onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/email/preview/${campaign._id}`, '_blank')}>
-              <ExternalLink className="w-4 h-4 mr-2" />
+          <div className="flex gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl text-xs h-8"
+              onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/email/preview/${campaign._id}`, '_blank')}
+            >
+              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
               Preview HTML
             </Button>
             {campaign.status === 'draft' && (
-              <Button onClick={() => navigate(`/email/campaigns/${campaign._id}/edit`)} style={{ backgroundColor: '#F6511E' }} className="text-white">
-                Edit Campaign
+              <Button size="sm" className="rounded-xl text-xs h-8 text-white" style={{ backgroundColor: '#F6511E' }} onClick={() => navigate(`/email/campaigns/${campaign._id}/edit`)}>
+                Edit
               </Button>
             )}
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Delivery</p>
-                  <p className="text-2xl font-bold">{stats.sent || campaign.successCount || 0} / {campaign.totalRecipients || 0}</p>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {statCards.map((s) => (
+            <div key={s.label} className={`bg-white rounded-2xl border p-5 transition-all ${s.highlight ? 'border-green-200 shadow-sm' : 'border-gray-100'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${s.bg} ${s.color}`}>
+                  {s.icon}
                 </div>
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                  <Send className="w-6 h-6" />
-                </div>
+                {s.highlight && <TrendingUp className="w-4 h-4 text-green-500" />}
               </div>
-              <div className="mt-2 text-xs text-gray-400">
-                {(stats.sent || campaign.successCount) && campaign.totalRecipients > 0 
-                  ? `${(((stats.sent || campaign.successCount) / campaign.totalRecipients) * 100).toFixed(1)}% success rate`
-                  : 'Sending in progress...'}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Open Rate</p>
-                  <p className="text-2xl font-bold">{openRate}%</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                  <MailOpen className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="mt-2 text-xs text-gray-400">
-                {stats.uniqueOpens || 0} unique opens
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Click Rate</p>
-                  <p className="text-2xl font-bold">{clickRate}%</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
-                  <MousePointer2 className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="mt-2 text-xs text-gray-400">
-                {stats.uniqueClicks || 0} unique clicks
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Bounce/Unsub</p>
-                  <p className="text-2xl font-bold">{(stats.bounced || 0) + (stats.unsubscribed || 0)}</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
-                  <AlertCircle className="w-6 h-6" />
-                </div>
-              </div>
-              <div className="mt-2 text-xs text-gray-400">
-                {stats.bounced || 0} bounces, {stats.unsubscribed || 0} unsubscribes
-              </div>
-            </CardContent>
-          </Card>
+              <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+              <p className="text-xs font-medium text-gray-500 mt-0.5">{s.label}</p>
+              <p className="text-[11px] text-gray-400 mt-1">{s.sub}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Recipients Table */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Recipients</CardTitle>
-              <p className="text-sm text-gray-500 mt-1">Activity feed for all recipients</p>
+        {/* Recipients */}
+        <div className="bg-white rounded-2xl border border-gray-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-400" />
+              <span className="font-semibold text-sm text-gray-900">Recipients</span>
+              <span className="text-xs text-gray-400">Activity feed</span>
             </div>
-            {isRecipientsLoading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
-          </CardHeader>
-          <CardContent className="p-0">
-            {recipients.length === 0 ? (
-              <div className="text-center py-20 text-gray-400">
-                <Users className="w-12 h-12 mx-auto mb-4" />
-                <p>No recipient activity tracked yet</p>
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email Address</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Last Activity</TableHead>
-                      <TableHead>History</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recipients.map((recipient) => (
-                      <TableRow key={recipient._id}>
-                        <TableCell className="font-medium">{recipient._id}</TableCell>
-                        <TableCell>{getStatusBadge(recipient.status)}</TableCell>
-                        <TableCell className="text-sm text-gray-500 flex items-center gap-2">
-                          <Clock className="w-3 h-3" />
-                          {new Date(recipient.lastEvent).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {Array.from(new Set(recipient.events.map(e => e.type))).map((type) => {
-                              const count = recipient.events.filter(e => e.type === type).length;
-                              return (
-                                <Badge key={type} variant="outline" className="text-[10px] py-0">
-                                  {type}{count > 1 ? ` x${count}` : ''}
-                                </Badge>
-                              );
-                            })}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            {isRecipientsLoading && <Loader2 className="w-4 h-4 animate-spin text-gray-300" />}
+          </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 p-4 border-t">
-                    <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                      Previous
-                    </Button>
-                    <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
-                    <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                      Next
-                    </Button>
+          {recipients.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Users className="w-10 h-10 text-gray-200 mb-3" />
+              <p className="text-sm text-gray-400">No recipient activity tracked yet</p>
+              <p className="text-xs text-gray-300 mt-1">Opens and clicks will appear here once recipients engage</p>
+            </div>
+          ) : (
+            <>
+              <div className="divide-y divide-gray-50">
+                {recipients.map((r) => (
+                  <div key={r._id} className="flex items-center gap-4 px-6 py-3.5">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
+                      {r._id.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{r._id}</p>
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        {Array.from(new Set(r.events.map((e) => e.type))).map((type) => {
+                          const count = r.events.filter((e) => e.type === type).length;
+                          return (
+                            <span key={type} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${EVENT_COLORS[type] || 'bg-gray-100 text-gray-500'}`}>
+                              {type}{count > 1 ? ` ×${count}` : ''}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_BADGE[r.status] || 'bg-gray-100 text-gray-500'}`}>
+                        {r.status}
+                      </span>
+                      <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1 justify-end">
+                        <Clock className="w-3 h-3" />
+                        {new Date(r.lastEvent).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-50">
+                  <Button variant="outline" size="sm" className="rounded-xl" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
+                  <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
+                  <Button variant="outline" size="sm" className="rounded-xl" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </PageTransition>
   );
