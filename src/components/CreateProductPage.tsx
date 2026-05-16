@@ -10,6 +10,7 @@ import {
   STYLE_TAG_OPTIONS,
   SUBCATEGORIES_MAP,
   CORE_CATEGORY_OPTIONS,
+  SUB_SUBCATEGORIES_MAP,
   PERSONALIZATION_TYPE_OPTIONS,
 } from '../types';
 import { Button } from '@/components/ui/button';
@@ -53,10 +54,10 @@ import {
 } from '@/components/ui/command';
 
 const STEPS = [
-  { id: 1, name: 'Basic Info', description: 'Product details' },
-  { id: 2, name: 'Media', description: 'Images & videos' },
+  { id: 1, name: 'Product Details', description: 'Name, description & media' },
+  { id: 2, name: 'Category', description: 'Category, tags & audience' },
   { id: 3, name: 'Pricing', description: 'Price & inventory' },
-  { id: 4, name: 'Details', description: 'Additional info' },
+  { id: 4, name: 'Additional Details', description: 'Style, specs & info' },
   { id: 5, name: 'Customization', description: 'Options & badges' },
 ];
 
@@ -77,9 +78,6 @@ export function CreateProductPage() {
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [vendorSearchOpen, setVendorSearchOpen] = useState(false);
 
-  // DB Categories (for the Figma hierarchy)
-  const [dbCategories, setDbCategories] = useState<Array<{ _id: string; name: string; parent?: { _id: string; name: string } | null }>>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
   // Form state
   const [vendorId, setVendorId] = useState('');
@@ -88,6 +86,7 @@ export function CreateProductPage() {
   // Form state — V2 IA Taxonomy
   const [selectedCoreCategory, setSelectedCoreCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [selectedSubSubcategory, setSelectedSubSubcategory] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [selectedOccasionTags, setSelectedOccasionTags] = useState<string[]>([]);
   const [selectedStyleTags, setSelectedStyleTags] = useState<string[]>([]);
@@ -128,8 +127,9 @@ export function CreateProductPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const setTouchedField = (name: string) => setTouched((prev) => ({ ...prev, [name]: true }));
 
-  // Subcategory options derived from selected core category
+  // Cascading options derived from selections
   const subcategoryOptions = selectedCoreCategory ? SUBCATEGORIES_MAP[selectedCoreCategory] ?? [] : [];
+  const subSubcategoryOptions = selectedSubcategory ? SUB_SUBCATEGORIES_MAP[selectedSubcategory] ?? [] : [];
 
   const markStepTouched = (step: number) => {
     switch (step) {
@@ -140,12 +140,11 @@ export function CreateProductPage() {
           name: true,
           description: true,
           sku: true,
-          recipients: true,
-          occasionTags: true,
+          images: true,
         }));
         break;
       case 2:
-        setTouched((prev) => ({ ...prev, images: true }));
+        setTouched((prev) => ({ ...prev, recipients: true }));
         break;
       case 3:
         setTouched((prev) => ({ ...prev, basePrice: true }));
@@ -185,20 +184,19 @@ export function CreateProductPage() {
   const handleCoreCategoryChange = (cat: string) => {
     setSelectedCoreCategory(cat);
     setSelectedSubcategory('');
+    setSelectedSubSubcategory('');
+  };
+
+  const handleSubcategoryChange = (sub: string) => {
+    setSelectedSubcategory(sub);
+    setSelectedSubSubcategory('');
   };
 
   const loadData = useCallback(async () => {
     try {
-      const [vendorsRes, categoriesRes] = await Promise.all([
-        apiClient.getVendors(),
-        apiClient.getCategories({ limit: 200, activeOnly: true }),
-      ]);
-
+      const vendorsRes = await apiClient.getVendors();
       if (vendorsRes.success && vendorsRes.data) {
         setVendors(vendorsRes.data);
-      }
-      if (categoriesRes.success && categoriesRes.data) {
-        setDbCategories(categoriesRes.data);
       }
 
       // Load product data if in edit mode
@@ -216,17 +214,27 @@ export function CreateProductPage() {
           setSelectedRecipients(product.recipientTags || []);
           setSelectedStyleTags(product.styleTags || []);
           if (product.subcategory) {
-            // Reverse-look up the core category from the subcategory value
-            const parentCat = Object.entries(SUBCATEGORIES_MAP).find(([, subs]) =>
-              (subs as readonly string[]).includes(product.subcategory)
-            )?.[0] ?? '';
-            setSelectedCoreCategory(parentCat);
-            setSelectedSubcategory(product.subcategory);
-          }
-          // DB Category (for Figma hierarchy)
-          if (product.category) {
-            const catId = typeof product.category === 'object' ? product.category._id : product.category;
-            setSelectedCategoryId(catId || '');
+            // Check if the stored value is a sub-subcategory (level 3)
+            const subSubEntry = Object.entries(SUB_SUBCATEGORIES_MAP).find(([, items]) =>
+              (items as readonly string[]).includes(product.subcategory)
+            );
+            if (subSubEntry) {
+              // It's a level-3 value: find the parent subcategory, then core category
+              const subcategoryKey = subSubEntry[0];
+              const coreCat = Object.entries(SUBCATEGORIES_MAP).find(([, subs]) =>
+                (subs as readonly string[]).includes(subcategoryKey)
+              )?.[0] ?? '';
+              setSelectedCoreCategory(coreCat);
+              setSelectedSubcategory(subcategoryKey);
+              setSelectedSubSubcategory(product.subcategory);
+            } else {
+              // It's a level-2 subcategory value
+              const coreCat = Object.entries(SUBCATEGORIES_MAP).find(([, subs]) =>
+                (subs as readonly string[]).includes(product.subcategory)
+              )?.[0] ?? '';
+              setSelectedCoreCategory(coreCat);
+              setSelectedSubcategory(product.subcategory);
+            }
           }
           // Legacy
           setSelectedOccasions(product.occasion || []);
@@ -395,6 +403,7 @@ export function CreateProductPage() {
     // V2 IA
     setSelectedCoreCategory('');
     setSelectedSubcategory('');
+    setSelectedSubSubcategory('');
     setSelectedRecipients([]);
     setSelectedOccasionTags([]);
     setSelectedStyleTags([]);
@@ -432,27 +441,25 @@ export function CreateProductPage() {
           toast.error('Please fill in all required fields');
           return false;
         }
-        if (selectedRecipients.length === 0) {
-          markStepTouched(1);
-          toast.error('Please select at least one recipient (who is this gift for?)');
-          return false;
-        }
-        return true;
-      case 2:
-        // In edit mode, allow if there are existing images
         if (isEditMode) {
           if (images.length === 0 && existingImages.length === 0) {
-            markStepTouched(2);
+            markStepTouched(1);
             toast.error('Please keep at least one product image or upload new ones');
             return false;
           }
         } else {
-          // In create mode, require at least one image
           if (images.length === 0) {
-            markStepTouched(2);
+            markStepTouched(1);
             toast.error('Please upload at least one product image');
             return false;
           }
+        }
+        return true;
+      case 2:
+        if (selectedRecipients.length === 0) {
+          markStepTouched(2);
+          toast.error('Please select at least one recipient (who is this gift for?)');
+          return false;
         }
         return true;
       case 3:
@@ -511,8 +518,9 @@ export function CreateProductPage() {
       if (selectedRecipients.length) formData.append('recipientTags', JSON.stringify(selectedRecipients));
       if (selectedOccasionTags.length) formData.append('occasionTags', JSON.stringify(selectedOccasionTags));
       if (selectedStyleTags.length) formData.append('styleTags', JSON.stringify(selectedStyleTags));
-      if (selectedSubcategory) formData.append('subcategory', selectedSubcategory);
-      if (selectedCategoryId) formData.append('category', selectedCategoryId);
+      // Store the most specific level selected (sub-subcategory if chosen, else subcategory)
+      const subcategoryValue = selectedSubSubcategory || selectedSubcategory;
+      if (subcategoryValue) formData.append('subcategory', subcategoryValue);
       // Legacy (kept for backwards compat)
       if (selectedOccasions.length) formData.append('occasion', JSON.stringify(selectedOccasions));
       if (selectedGiftTypes.length) formData.append('giftType', JSON.stringify(selectedGiftTypes));
@@ -679,7 +687,7 @@ export function CreateProductPage() {
         }}
       >
         <AnimatePresence mode="wait">
-          {/* Step 1: Basic Information */}
+          {/* Step 1: Product Details — name, description & media */}
           {currentStep === 1 && (
             <motion.div
               key="step-1"
@@ -687,15 +695,16 @@ export function CreateProductPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
+              className="space-y-6"
             >
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>Select the vendor and enter product details</CardDescription>
+                  <CardTitle>Product Details</CardTitle>
+                  <CardDescription>Select the vendor and enter the product name and description</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* ── Vendor + SKU ─────────────────────────────────────── */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                    {/* Vendor Dropdown with Search */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 min-h-[24px]">
                         <Label htmlFor="vendor">Vendor *</Label>
@@ -768,17 +777,16 @@ export function CreateProductPage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 min-h-[24px]">
                         <Label htmlFor="sku">SKU *</Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">
-                                Auto-generated when you select a vendor. You can modify it if
-                                needed.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Auto-generated when you select a vendor. You can modify it if needed.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                       <Input
                         id="sku"
@@ -798,192 +806,7 @@ export function CreateProductPage() {
                     </div>
                   </div>
 
-                  {/* ── Occasion Tags (V2) ─────────────────────────────────── */}
-                  <div className="space-y-2">
-                    <Label>
-                      Occasion Tags{' '}
-                      <span className="text-gray-500 font-normal">(Optional — select all that apply)</span>
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {OCCASION_OPTIONS.map((occasion) => (
-                        <button
-                          key={occasion}
-                          type="button"
-                          onClick={() => {
-                            toggleOccasionTag(occasion);
-                            setTouchedField('occasionTags');
-                          }}
-                          className={cn(
-                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                            selectedOccasionTags.includes(occasion)
-                              ? 'border-transparent text-white'
-                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
-                          )}
-                          style={
-                            selectedOccasionTags.includes(occasion)
-                              ? { backgroundColor: '#F6511E' }
-                              : {}
-                          }
-                        >
-                          {selectedOccasionTags.includes(occasion) && (
-                            <Check className="w-3 h-3 inline mr-1" />
-                          )}
-                          {occasion}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ── Recipients (V2 — Required) ─────────────────────────── */}
-                  <div className="space-y-2">
-                    <Label>
-                      Who is this gift for? *{' '}
-                      <span className="text-gray-500 font-normal">(Select at least one)</span>
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {RECIPIENT_OPTIONS.map((recipient) => (
-                        <button
-                          key={recipient}
-                          type="button"
-                          onClick={() => {
-                            toggleRecipient(recipient);
-                            setTouchedField('recipients');
-                          }}
-                          className={cn(
-                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                            selectedRecipients.includes(recipient)
-                              ? 'border-transparent text-white'
-                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
-                          )}
-                          style={
-                            selectedRecipients.includes(recipient)
-                              ? { backgroundColor: '#F6511E' }
-                              : {}
-                          }
-                        >
-                          {selectedRecipients.includes(recipient) && (
-                            <Check className="w-3 h-3 inline mr-1" />
-                          )}
-                          {recipient}
-                        </button>
-                      ))}
-                    </div>
-                    {selectedRecipients.length === 0 && (isSubmitting || touched.recipients) && (
-                      <p className="text-sm text-red-600 mt-1">
-                        Please select who this gift is for
-                      </p>
-                    )}
-                  </div>
-
-                  {/* ── Primary Category (DB-backed for frontend) ────────── */}
-                  <div className="space-y-2">
-                    <Label htmlFor="primaryCategory">
-                      Primary Category{' '}
-                      <span className="text-gray-500 font-normal">(Storefront)</span>
-                    </Label>
-                    <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                      <SelectTrigger id="primaryCategory" type="button">
-                        <SelectValue placeholder="Select a storefront category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {dbCategories
-                          .filter((c) => !c.parent && c.isActive)
-                          .map((parent) => {
-                            const children = dbCategories.filter(
-                              (ch) => ch.parent && 
-                                (typeof ch.parent === 'object' ? ch.parent._id : ch.parent) === parent._id &&
-                                ch.isActive
-                            );
-                            return (
-                              <React.Fragment key={parent._id}>
-                                <SelectItem value={parent._id} className="font-semibold">
-                                  {parent.name}
-                                </SelectItem>
-                                {children.map((child) => (
-                                  <SelectItem key={child._id} value={child._id} className="pl-6">
-                                    ↳ {child.name}
-                                  </SelectItem>
-                                ))}
-                              </React.Fragment>
-                            );
-                          })}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-400">
-                      This is the category shown on the storefront. Manage categories from the sidebar.
-                    </p>
-                  </div>
-
-                  {/* ── Category & Subcategory (V2 IA Tags) ──────────────── */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="coreCategory">Tag Category</Label>
-                      <Select value={selectedCoreCategory} onValueChange={handleCoreCategoryChange}>
-                        <SelectTrigger id="coreCategory" type="button">
-                          <SelectValue placeholder="Select a tag category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CORE_CATEGORY_OPTIONS.map((cat) => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="subcategory">Subcategory Tag</Label>
-                      <Select
-                        value={selectedSubcategory}
-                        onValueChange={setSelectedSubcategory}
-                        disabled={subcategoryOptions.length === 0}
-                      >
-                        <SelectTrigger id="subcategory" type="button">
-                          <SelectValue placeholder={
-                            selectedCoreCategory ? 'Select a subcategory' : 'Select a tag category first'
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {subcategoryOptions.map((sub) => (
-                            <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* ── Style Tags (V2 — Optional) ─────────────────────────── */}
-                  <div className="space-y-2">
-                    <Label>
-                      Style / Vibe Tags{' '}
-                      <span className="text-gray-500 font-normal">(Optional)</span>
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {STYLE_TAG_OPTIONS.map((style) => (
-                        <button
-                          key={style}
-                          type="button"
-                          onClick={() => toggleStyleTag(style)}
-                          className={cn(
-                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                            selectedStyleTags.includes(style)
-                              ? 'border-transparent text-white'
-                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
-                          )}
-                          style={
-                            selectedStyleTags.includes(style)
-                              ? { backgroundColor: '#F6511E' }
-                              : {}
-                          }
-                        >
-                          {selectedStyleTags.includes(style) && (
-                            <Check className="w-3 h-3 inline mr-1" />
-                          )}
-                          {style}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
+                  {/* ── Product Name ──────────────────────────────────────── */}
                   <div className="space-y-2">
                     <Label htmlFor="name">Product Name *</Label>
                     <Input
@@ -1003,20 +826,20 @@ export function CreateProductPage() {
                     )}
                   </div>
 
+                  {/* ── Description ──────────────────────────────────────── */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="description">Description *</Label>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Detailed description shown on the product detail page. Include
-                              features, materials, and usage.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            Detailed description shown on the product detail page. Include features, materials, and usage.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                     <Textarea
                       id="description"
@@ -1037,18 +860,8 @@ export function CreateProductPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
-          )}
 
-          {/* Step 2: Media */}
-          {currentStep === 2 && (
-            <motion.div
-              key="step-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
+              {/* ── Images ──────────────────────────────────────────────── */}
               <Card className="border-0 shadow-sm">
                 <CardHeader>
                   <CardTitle>Product Images *</CardTitle>
@@ -1058,7 +871,6 @@ export function CreateProductPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                    {/* Existing images in edit mode */}
                     {existingImages.map((img, index) => (
                       <div
                         key={`existing-${index}`}
@@ -1089,7 +901,6 @@ export function CreateProductPage() {
                         )}
                       </div>
                     ))}
-                    {/* New images to upload */}
                     {imagePreviews.map((preview, index) => (
                       <div
                         key={`new-${index}`}
@@ -1139,7 +950,7 @@ export function CreateProductPage() {
                       </label>
                     )}
                   </div>
-                  {images.length === 0 && (isSubmitting || touched.images) && (
+                  {images.length === 0 && !isEditMode && (isSubmitting || touched.images) && (
                     <p className="text-sm text-red-600 mt-2">
                       Please upload at least one product image
                     </p>
@@ -1147,6 +958,7 @@ export function CreateProductPage() {
                 </CardContent>
               </Card>
 
+              {/* ── Videos ──────────────────────────────────────────────── */}
               <Card className="border-0 shadow-sm">
                 <CardHeader>
                   <CardTitle>Product Videos (Optional)</CardTitle>
@@ -1210,6 +1022,154 @@ export function CreateProductPage() {
                         />
                       </label>
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 2: Category — category, subcategory, recipients & occasions */}
+          {currentStep === 2 && (
+            <motion.div
+              key="step-2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle>Category & Classification</CardTitle>
+                  <CardDescription>Set the category, audience, and occasion for this product</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* ── 3-level Category Cascade ─────────────────────────── */}
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="coreCategory">Category</Label>
+                      <Select value={selectedCoreCategory} onValueChange={handleCoreCategoryChange}>
+                        <SelectTrigger id="coreCategory" type="button">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CORE_CATEGORY_OPTIONS.map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {subcategoryOptions.length > 0 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="subcategory">Subcategory</Label>
+                        <Select
+                          value={selectedSubcategory}
+                          onValueChange={handleSubcategoryChange}
+                        >
+                          <SelectTrigger id="subcategory" type="button">
+                            <SelectValue placeholder="Select a subcategory" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subcategoryOptions.map((sub) => (
+                              <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {subSubcategoryOptions.length > 0 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="subSubcategory">Type</Label>
+                        <Select
+                          value={selectedSubSubcategory}
+                          onValueChange={setSelectedSubSubcategory}
+                        >
+                          <SelectTrigger id="subSubcategory" type="button">
+                            <SelectValue placeholder="Select a type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subSubcategoryOptions.map((item) => (
+                              <SelectItem key={item} value={item}>{item}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Recipients (Required) ─────────────────────────────── */}
+                  <div className="space-y-2">
+                    <Label>
+                      Who is this gift for? *{' '}
+                      <span className="text-gray-500 font-normal">(Select at least one)</span>
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {RECIPIENT_OPTIONS.map((recipient) => (
+                        <button
+                          key={recipient}
+                          type="button"
+                          onClick={() => {
+                            toggleRecipient(recipient);
+                            setTouchedField('recipients');
+                          }}
+                          className={cn(
+                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                            selectedRecipients.includes(recipient)
+                              ? 'border-transparent text-white'
+                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
+                          )}
+                          style={
+                            selectedRecipients.includes(recipient)
+                              ? { backgroundColor: '#F6511E' }
+                              : {}
+                          }
+                        >
+                          {selectedRecipients.includes(recipient) && (
+                            <Check className="w-3 h-3 inline mr-1" />
+                          )}
+                          {recipient}
+                        </button>
+                      ))}
+                    </div>
+                    {selectedRecipients.length === 0 && (isSubmitting || touched.recipients) && (
+                      <p className="text-sm text-red-600 mt-1">
+                        Please select who this gift is for
+                      </p>
+                    )}
+                  </div>
+
+                  {/* ── Occasion Tags (Optional) ──────────────────────────── */}
+                  <div className="space-y-2">
+                    <Label>
+                      Occasion Tags{' '}
+                      <span className="text-gray-500 font-normal">(Optional — select all that apply)</span>
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {OCCASION_OPTIONS.map((occasion) => (
+                        <button
+                          key={occasion}
+                          type="button"
+                          onClick={() => toggleOccasionTag(occasion)}
+                          className={cn(
+                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                            selectedOccasionTags.includes(occasion)
+                              ? 'border-transparent text-white'
+                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
+                          )}
+                          style={
+                            selectedOccasionTags.includes(occasion)
+                              ? { backgroundColor: '#F6511E' }
+                              : {}
+                          }
+                        >
+                          {selectedOccasionTags.includes(occasion) && (
+                            <Check className="w-3 h-3 inline mr-1" />
+                          )}
+                          {occasion}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1344,7 +1304,7 @@ export function CreateProductPage() {
             </motion.div>
           )}
 
-          {/* Step 4: Product Details */}
+          {/* Step 4: Additional Details */}
           {currentStep === 4 && (
             <motion.div
               key="step-4"
@@ -1355,10 +1315,44 @@ export function CreateProductPage() {
             >
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Product Details</CardTitle>
-                  <CardDescription>Add additional product information</CardDescription>
+                  <CardTitle>Additional Details</CardTitle>
+                  <CardDescription>Style tags, specs and product information</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+
+                  {/* ── Style Tags ────────────────────────────────────────── */}
+                  <div className="space-y-2">
+                    <Label>
+                      Style / Vibe Tags{' '}
+                      <span className="text-gray-500 font-normal">(Optional)</span>
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {STYLE_TAG_OPTIONS.map((style) => (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => toggleStyleTag(style)}
+                          className={cn(
+                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                            selectedStyleTags.includes(style)
+                              ? 'border-transparent text-white'
+                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
+                          )}
+                          style={
+                            selectedStyleTags.includes(style)
+                              ? { backgroundColor: '#F6511E' }
+                              : {}
+                          }
+                        >
+                          {selectedStyleTags.includes(style) && (
+                            <Check className="w-3 h-3 inline mr-1" />
+                          )}
+                          {style}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 min-h-[24px]">
@@ -1676,10 +1670,10 @@ export function CreateProductPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadProgress === 100 ? 'Finalizing...' : 'Creating...'}
+                      {uploadProgress === 100 ? 'Finalizing...' : isEditMode ? 'Saving...' : 'Creating...'}
                     </>
                   ) : (
-                    'Create Product'
+                    isEditMode ? 'Save Changes' : 'Create Product'
                   )}
                 </Button>
               </motion.div>

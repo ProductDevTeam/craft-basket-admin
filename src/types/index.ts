@@ -133,16 +133,37 @@ export const STYLE_TAG_OPTIONS = [
   'Modern',
 ] as const;
 
-/** Maps each core category to its valid subcategories */
+/** Level 1 → Level 2: maps each core category to its subcategories */
 export const SUBCATEGORIES_MAP: Record<string, readonly string[]> = {
-  'Gift Boxes': ['Self-care Boxes', 'Snack Boxes', 'Luxury Boxes', 'Birthday Boxes', 'Corporate Boxes'],
-  'Food & Treats': ['Snacks', 'Chocolates', 'Cakes', 'Gourmet Packs', 'Drinks'],
-  'Fashion & Accessories': ['Women Fashion', 'Men Fashion', 'Bags', 'Shoes', 'Watches'],
-  'Beauty & Self-care': ['Skincare', 'Perfumes', 'Spa Kits', 'Haircare'],
-  'Personalized Gifts': ['Custom Mugs', 'Custom Frames', 'Custom Shirts', 'Engraved Gifts'],
+  'Fashion & Accessories': ['Men Fashion', 'Women Fashion', 'Footwear', 'Bags', 'Wallets', 'Watches', 'Jewellery Accessories'],
+  'Beauty & Self-care':    ['Skincare', 'Haircare', 'Perfumes', 'Spa Kits', 'Grooming'],
+  'Food & Treats':         ['Snacks', 'Chocolates', 'Cakes', 'Pastries', 'Fruit Packs', 'Drinks', 'Wine Alternatives', 'Healthy Packs'],
+  'Gift Boxes':            ['Self-care Boxes', 'Snack Boxes', 'Romantic Boxes', 'Luxury Boxes', 'Birthday Boxes', 'Corporate Boxes', 'Baby Boxes'],
+  'Home & Living':         ['Candles', 'Decor', 'Kitchenware', 'Bedding', 'Aromatherapy', 'Storage Solutions'],
+  'Tech & Gadgets':        ['Earbuds', 'Speakers', 'Power Banks', 'Phone Accessories', 'Gaming Accessories', 'Smart Devices'],
+  'Baby & Child':          ['Baby Clothing', 'Feeding Essentials', 'Bath Essentials', 'Toys', 'School Essentials', 'Books'],
+  'Personalized Gifts':    ['Custom Mugs', 'Custom Frames', 'Custom Shirts', 'Custom Pillows', 'Custom Keyholders', 'Engraved Gifts'],
 };
 
 export const CORE_CATEGORY_OPTIONS = Object.keys(SUBCATEGORIES_MAP) as string[];
+
+/** Level 2 → Level 3: maps each subcategory to its specific items (only for categories with deep hierarchy) */
+export const SUB_SUBCATEGORIES_MAP: Record<string, readonly string[]> = {
+  // Fashion & Accessories
+  'Men Fashion':           ['Shirts', 'Trousers', 'Shorts', 'Native Wear', 'Jackets', 'Hoodies', 'Tracksuits'],
+  'Women Fashion':         ['Dresses', 'Tops', 'Trousers', 'Skirts', 'Jumpsuits', 'Co-ords', 'Outerwear'],
+  'Footwear':              ['Sneakers', 'Sandals', 'Slippers', 'Heels', 'Boots', 'Loafers'],
+  'Bags':                  ['Handbags', 'Tote Bags', 'Backpacks', 'Clutches', 'Travel Bags'],
+  'Wallets':               ['Men Wallets', 'Women Wallets', 'Card Holders'],
+  'Watches':               ['Smartwatches', 'Luxury Watches', 'Casual Watches'],
+  'Jewellery Accessories': ['Bracelets', 'Chains', 'Earrings', 'Rings'],
+  // Beauty & Self-care
+  'Skincare':              ['Cleansers', 'Serums', 'Moisturizers', 'Sunscreens'],
+  'Haircare':              ['Wigs', 'Hair Oils', 'Shampoos', 'Conditioners'],
+  'Perfumes':              ['Men Perfumes', 'Women Perfumes', 'Unisex Perfumes'],
+  'Spa Kits':              ['Bath Kits', 'Massage Kits', 'Relaxation Kits'],
+  'Grooming':              ['Beard Kits', 'Shaving Kits'],
+};
 
 // ─── Legacy (kept for backwards compat with any existing code) ────────────────
 export const GIFT_TYPE_OPTIONS = RECIPIENT_OPTIONS;
