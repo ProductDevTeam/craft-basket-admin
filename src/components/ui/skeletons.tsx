@@ -64,6 +64,63 @@ export function StatsGridSkeleton() {
   );
 }
 
+// Email overview skeleton — data sections only (no header)
+export function EmailOverviewSkeleton() {
+  return (
+    <>
+      {/* 4 stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="w-10 h-10 rounded-xl" />
+              <Skeleton className="w-4 h-4 rounded" />
+            </div>
+            <Skeleton className="h-7 w-12" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+        ))}
+      </div>
+      {/* Two column */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {Array.from({ length: 2 }).map((_, col) => (
+          <div key={col} className="bg-white rounded-2xl border border-gray-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <div className="divide-y divide-gray-50">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-6 py-3.5">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Audience snapshot */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <Skeleton className="h-4 w-40 mb-5" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-gray-50 rounded-xl p-4 space-y-2">
+              <Skeleton className="h-7 w-16" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // Table row skeleton
 export function TableRowSkeleton({ columns = 5 }: { columns?: number }) {
   return (
@@ -93,35 +150,102 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
   );
 }
 
-// Form skeleton
+// Form skeleton — matches campaign/template form (header + 3-col grid + builder area)
 export function FormSkeleton() {
   return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader>
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-4 w-64" />
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-7 w-44" />
+          <Skeleton className="h-4 w-48" />
         </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-20 rounded-xl" />
+          <Skeleton className="h-8 w-24 rounded-xl" />
+          <Skeleton className="h-8 w-24 rounded-xl" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main — 3 cols */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+            <Skeleton className="h-3 w-32" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-9 w-full rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-9 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
+          <Skeleton className="h-[500px] w-full rounded-2xl" />
+        </div>
+        {/* Sidebar — 1 col */}
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-9 w-full rounded-xl" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Campaign details skeleton — matches header + 4 stats + recipients list
+export function CampaignDetailsSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-6 w-52" />
+          <Skeleton className="h-3 w-64" />
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-28 rounded-xl" />
+        </div>
+      </div>
+      {/* 4 stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+            <Skeleton className="w-9 h-9 rounded-xl" />
+            <Skeleton className="h-7 w-16" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+        ))}
+      </div>
+      {/* Recipients */}
+      <div className="bg-white rounded-2xl border border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <div className="divide-y divide-gray-50">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-6 py-3.5">
+              <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3.5 w-48" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+              <div className="text-right space-y-1">
+                <Skeleton className="h-5 w-16 rounded-full ml-auto" />
+                <Skeleton className="h-3 w-28" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -374,9 +498,47 @@ export function ProductViewPageSkeleton() {
     </div>
   );
 }
-// Email campaign table skeleton
+// Email campaigns list skeleton — matches the row-card layout
 export function EmailCampaignTableSkeleton() {
-  return <TableSkeleton rows={5} columns={6} />;
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4">
+          <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-3 w-56" />
+          </div>
+          <div className="hidden sm:flex items-center gap-6">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Email templates grid skeleton — matches the card grid layout
+export function EmailTemplateGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <Skeleton className="h-28 w-full" />
+          <div className="p-4 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-20 mt-2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // Email template card skeleton
@@ -398,39 +560,99 @@ export function EmailTemplateCardSkeleton() {
   );
 }
 
-// Email automation rule skeleton
-export function AutomationRuleSkeleton() {
+// Vendors table skeleton — matches avatar+name, business, email, status, actions columns
+export function VendorsTableSkeleton() {
   return (
-    <Card className="border-0 shadow-sm">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-52" />
-          <div className="flex gap-2 pt-2">
-            <Skeleton className="h-8 w-8" />
-            <Skeleton className="h-8 w-8" />
+    <Card className="border-0 shadow-sm overflow-hidden">
+      <div className="bg-gray-50/50 px-4 py-3 grid grid-cols-[1fr_1fr_1fr_80px_48px] gap-4 border-b">
+        {['Vendor', 'Business Name', 'Email', 'Status', ''].map((h, i) => (
+          <Skeleton key={i} className="h-4 w-20" />
+        ))}
+      </div>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="px-4 py-3.5 grid grid-cols-[1fr_1fr_1fr_80px_48px] gap-4 items-center border-b last:border-0">
+          {/* Vendor: avatar + name */}
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
+            <Skeleton className="h-4 w-28" />
           </div>
+          {/* Business name */}
+          <Skeleton className="h-4 w-32" />
+          {/* Email */}
+          <Skeleton className="h-4 w-40" />
+          {/* Status badge */}
+          <Skeleton className="h-5 w-14 rounded-full" />
+          {/* Actions */}
+          <Skeleton className="h-8 w-8 rounded-lg ml-auto" />
         </div>
-      </CardContent>
+      ))}
     </Card>
   );
 }
 
-// Email subscriber card skeleton
+// Categories master-detail skeleton — only the fetched list + grid areas
+export function CategoriesPageSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+      {/* Left: category list */}
+      <div className="space-y-1.5">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
+            <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <Skeleton className="h-3.5 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <Skeleton className="w-4 h-4 rounded shrink-0" />
+          </div>
+        ))}
+      </div>
+      {/* Right: subcategory grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="rounded-2xl border border-gray-200 overflow-hidden">
+            <Skeleton className="h-32 w-full" />
+            <div className="p-3 space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Email automation rule skeleton — row card style
+export function AutomationRuleSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center gap-4">
+      <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+      <Skeleton className="h-5 w-16 rounded-full" />
+      <div className="flex gap-1">
+        <Skeleton className="w-7 h-7 rounded-lg" />
+        <Skeleton className="w-7 h-7 rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+// Email subscriber row skeleton
 export function SubscriberCardSkeleton() {
   return (
-    <Card className="border-0 shadow-sm">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-          <Skeleton className="h-6 w-20 rounded-full" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-4 px-6 py-3.5">
+      <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+      <div className="flex-1 space-y-1.5">
+        <Skeleton className="h-3.5 w-44" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+      <Skeleton className="h-3 w-24" />
+      <Skeleton className="h-5 w-16 rounded-full" />
+    </div>
   );
 }

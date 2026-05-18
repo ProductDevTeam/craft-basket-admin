@@ -12,6 +12,7 @@ import {
   Users,
   ShoppingCart,
   ShoppingBag,
+  FolderTree,
   Settings,
   BarChart3,
   Mail,
@@ -55,6 +56,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         location.pathname.startsWith('/edit-product')
       );
     }
+    // For categories
+    if (path === '/categories') {
+      return location.pathname.startsWith('/categories');
+    }
     // For email section, match all /email/* routes
     if (path === '/email') {
       return location.pathname.startsWith('/email');
@@ -73,6 +78,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       name: 'Products',
       path: '/products',
       icon: ShoppingBag,
+    },
+    {
+      name: 'Categories',
+      path: '/categories',
+      icon: FolderTree,
     },
     {
       name: 'Vendors',

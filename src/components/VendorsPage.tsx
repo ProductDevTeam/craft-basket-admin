@@ -42,7 +42,7 @@ import { apiClient } from '@/lib/api';
 import { Vendor } from '@/types';
 import { toast } from 'sonner';
 import { motion, AnimatePresence, PageTransition } from '@/lib/motion';
-import { TableSkeleton } from '@/components/ui/skeletons';
+import { VendorsTableSkeleton } from '@/components/ui/skeletons';
 
 export function VendorsPage() {
   const navigate = useNavigate();
@@ -218,7 +218,7 @@ export function VendorsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <TableSkeleton rows={6} columns={5} />
+            <VendorsTableSkeleton />
           </motion.div>
         ) : filteredVendors.length === 0 ? (
           <motion.div
