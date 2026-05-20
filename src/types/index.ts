@@ -150,8 +150,8 @@ export const CORE_CATEGORY_OPTIONS = Object.keys(SUBCATEGORIES_MAP) as string[];
 /** Level 2 → Level 3: maps each subcategory to its specific items (only for categories with deep hierarchy) */
 export const SUB_SUBCATEGORIES_MAP: Record<string, readonly string[]> = {
   // Fashion & Accessories
-  'Men Fashion':           ['Shirts', 'Trousers', 'Shorts', 'Native Wear', 'Jackets', 'Hoodies', 'Tracksuits'],
-  'Women Fashion':         ['Dresses', 'Tops', 'Trousers', 'Skirts', 'Jumpsuits', 'Co-ords', 'Outerwear'],
+  'Men Fashion':           ['Shirts', 'Men Trousers', 'Shorts', 'Native Wear', 'Jackets', 'Hoodies', 'Tracksuits'],
+  'Women Fashion':         ['Dresses', 'Tops', 'Women Trousers', 'Skirts', 'Jumpsuits', 'Co-ords', 'Outerwear'],
   'Footwear':              ['Sneakers', 'Sandals', 'Slippers', 'Heels', 'Boots', 'Loafers'],
   'Bags':                  ['Handbags', 'Tote Bags', 'Backpacks', 'Clutches', 'Travel Bags'],
   'Wallets':               ['Men Wallets', 'Women Wallets', 'Card Holders'],

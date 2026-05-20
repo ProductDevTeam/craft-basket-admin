@@ -147,7 +147,7 @@ export function CreateProductPage() {
         setTouched((prev) => ({ ...prev, recipients: true }));
         break;
       case 3:
-        setTouched((prev) => ({ ...prev, basePrice: true }));
+        setTouched((prev) => ({ ...prev, basePrice: true, stock: true }));
         break;
       default:
         break;
@@ -466,6 +466,11 @@ export function CreateProductPage() {
         if (!basePrice) {
           markStepTouched(3);
           toast.error('Please enter the base price');
+          return false;
+        }
+        if (!stock || parseInt(stock, 10) < 1) {
+          setTouched((prev) => ({ ...prev, stock: true }));
+          toast.error('Please enter a stock quantity of at least 1');
           return false;
         }
         return true;
@@ -1242,16 +1247,25 @@ export function CreateProductPage() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 min-h-[24px]">
-                        <Label htmlFor="stock">Stock Quantity</Label>
+                        <Label htmlFor="stock">Stock Quantity *</Label>
                       </div>
                       <Input
                         id="stock"
                         type="number"
-                        min="0"
+                        min="1"
                         value={stock}
                         onChange={(e) => setStock(e.target.value)}
-                        placeholder="0"
+                        onBlur={() => setTouchedField('stock')}
+                        placeholder="1"
+                        className={
+                          (!stock || parseInt(stock, 10) < 1) && (isSubmitting || touched.stock)
+                            ? 'border-red-500 ring-1 ring-red-500'
+                            : ''
+                        }
                       />
+                      {(!stock || parseInt(stock, 10) < 1) && (isSubmitting || touched.stock) && (
+                        <p className="text-sm text-red-600 mt-1">Stock quantity is required</p>
+                      )}
                     </div>
                   </div>
 
