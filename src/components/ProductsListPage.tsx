@@ -731,9 +731,9 @@ export function ProductsListPage() {
                   ...(product.occasionTags || []),
                 ];
                 return (
-                <StaggerItem key={product._id}>
-                  <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-                    <Card className="border-0 shadow-sm hover:shadow-lg transition-all overflow-hidden group cursor-pointer"
+                <StaggerItem key={product._id} className="h-full">
+                  <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="h-full">
+                    <Card className="border-0 shadow-sm hover:shadow-lg transition-all overflow-hidden group cursor-pointer h-full flex flex-col"
                       onClick={() => navigate(`/products/${product._id}`)}
                     >
                       {/* Product Image */}
@@ -782,7 +782,7 @@ export function ProductsListPage() {
                         )}
                       </div>
 
-                      <CardContent className="p-4">
+                      <CardContent className="p-4 flex flex-col flex-1">
                         {/* Product name */}
                         <h3
                           className="font-semibold text-gray-900 truncate mb-1 text-[15px]"
@@ -834,7 +834,7 @@ export function ProductsListPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex gap-2 border-t pt-3">
+                        <div className="flex gap-2 border-t pt-3 mt-auto">
                           <Button
                             size="sm"
                             variant="outline"
