@@ -60,6 +60,7 @@ function InlineForm({ parentId, editingCategory, onSave, onCancel, showImage }: 
   const isEdit = !!editingCategory;
   const [name, setName] = useState(editingCategory?.name || '');
   const [description, setDescription] = useState(editingCategory?.description || '');
+  const [pageDescription, setPageDescription] = useState((editingCategory as any)?.pageDescription || '');
   const [sortOrder, setSortOrder] = useState(editingCategory?.sortOrder || 0);
   const [isActive, setIsActive] = useState(editingCategory?.isActive ?? true);
   const [image, setImage] = useState<File | null>(null);
@@ -83,6 +84,7 @@ function InlineForm({ parentId, editingCategory, onSave, onCancel, showImage }: 
       const formData = new FormData();
       formData.append('name', name.trim());
       if (description.trim()) formData.append('description', description.trim());
+      if (pageDescription.trim()) formData.append('pageDescription', pageDescription.trim());
       if (parentId) formData.append('parent', parentId);
       formData.append('isActive', String(isActive));
       formData.append('sortOrder', String(sortOrder));
@@ -135,15 +137,32 @@ function InlineForm({ parentId, editingCategory, onSave, onCancel, showImage }: 
           </div>
 
           <div>
-            <Label className="text-xs text-gray-500 mb-1">Description</Label>
+            <Label className="text-xs text-gray-500 mb-1">Card Description</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Short description..."
+              placeholder="Short teaser shown on the category card — e.g. Handbags, Backpacks & more"
               className="rounded-xl text-sm resize-none"
               rows={2}
             />
           </div>
+
+          {/* Page description — subcategories only */}
+          {(parentId || showImage) && (
+            <div>
+              <Label className="text-xs text-gray-500 mb-1">Page Description</Label>
+              <Textarea
+                value={pageDescription}
+                onChange={(e) => setPageDescription(e.target.value)}
+                placeholder="Richer text shown at the top of the category landing page..."
+                className="rounded-xl text-sm resize-none"
+                rows={3}
+              />
+              <p className="text-[10px] text-gray-400 mt-1">
+                Shown as the hero description when users click through to this subcategory page.
+              </p>
+            </div>
+          )}
 
           {/* Image — only for subcategories */}
           {showImage && (
@@ -567,6 +586,15 @@ export function CategoriesPage() {
                                   {child.description && (
                                     <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
                                       {child.description}
+                                    </p>
+                                  )}
+                                  {(child as any).pageDescription ? (
+                                    <p className="text-[10px] text-blue-400 mt-0.5 line-clamp-1">
+                                      Page: {(child as any).pageDescription}
+                                    </p>
+                                  ) : (
+                                    <p className="text-[10px] text-amber-400 mt-0.5">
+                                      No page description
                                     </p>
                                   )}
                                   <div className="flex items-center gap-2 mt-2">
