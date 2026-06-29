@@ -22,7 +22,8 @@ import {
   HelpCircle,
   ChevronsUpDown,
   LifeBuoy,
-  FileText
+  FileText,
+  Truck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ebunlyLogo from '@/assets/ebunly-logo.png';
@@ -68,7 +69,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return location.pathname === path;
   };
 
-  const navigationItems = [
+  const navigationItems: { name: string; path: string; icon: React.ElementType; disabled?: boolean; badge?: string }[] = [
     {
       name: 'Dashboard',
       path: '/dashboard',
@@ -105,6 +106,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       path: '/analytics',
       icon: BarChart3,
       disabled: true,
+    },
+    {
+      name: 'Delivery Test',
+      path: '/delivery-sandbox',
+      icon: Truck,
+      badge: 'Test',
     },
   ];
 
@@ -144,6 +151,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 {item.name}
                 {item.disabled && (
                   <span className="ml-auto text-xs text-gray-400">Soon</span>
+                )}
+                {item.badge && !item.disabled && (
+                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                    {item.badge}
+                  </span>
                 )}
               </button>
             );
@@ -241,6 +253,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 {item.name}
                 {item.disabled && (
                   <span className="ml-auto text-xs text-gray-400">Soon</span>
+                )}
+                {item.badge && !item.disabled && (
+                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                    {item.badge}
+                  </span>
                 )}
               </button>
             );

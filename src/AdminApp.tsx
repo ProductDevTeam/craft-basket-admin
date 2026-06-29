@@ -20,6 +20,7 @@ import { EmailCampaignFormPage } from './components/email/EmailCampaignFormPage'
 import { EmailCampaignDetailsPage } from './components/email/EmailCampaignDetailsPage';
 import { AutomationRulesPage } from './components/email/AutomationRulesPage';
 import { SubscribersPage } from './components/email/SubscribersPage';
+import { DeliverySandboxPage } from './components/DeliverySandboxPage';
 
 
 function AdminContent() {
@@ -59,6 +60,7 @@ function AdminContent() {
         <Route path="/email/campaigns/:id" element={<EmailCampaignDetailsPage />} />
         <Route path="/email/automation" element={<AutomationRulesPage />} />
         <Route path="/email/subscribers" element={<SubscribersPage />} />
+        <Route path="/delivery-sandbox" element={<DeliverySandboxPage />} />
       </Routes>
     </AdminLayout>
   );
