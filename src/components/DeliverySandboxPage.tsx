@@ -51,6 +51,7 @@ interface Order {
 
 // Extract vendor ID string whether vendor is a populated object or a raw ID string
 function vendorId(p: Product): string {
+  if (!p.vendor) return '';
   return typeof p.vendor === 'object' ? p.vendor._id : p.vendor;
 }
 
@@ -63,6 +64,51 @@ const STEPS = [
   { id: 'payment',  label: 'Payment',  icon: CreditCard },
   { id: 'tracking', label: 'Tracking', icon: Truck },
 ];
+
+// ─── Lagos areas (mirrors kwikService LAGOS_COORDS keys) ─────────────────────
+
+const LAGOS_AREAS = [
+  'Lekki Phase 1', 'Lekki Phase 2', 'Victoria Island', 'Ikoyi', 'Ajah',
+  'Sangotedo', 'Chevron', 'Jakande', 'Ikeja', 'Allen Avenue', 'Alausa',
+  'Maryland', 'Ojota', 'Gbagada', 'Ogudu', 'Ogudu GRA', 'Yaba', 'Surulere',
+  'Lagos Island', 'Isale Eko', 'Apapa', 'Mushin', 'Oshodi', 'Festac Town',
+  'Ikorodu', 'Agege', 'Ogba', 'Magodo', 'Berger', 'Ojodu', 'Epe', 'Badagry',
+].sort();
+
+// ─── City autocomplete component ─────────────────────────────────────────────
+
+function CityAutocomplete({ value, onChange }: { value: string; onChange: (city: string) => void }) {
+  const [query, setQuery] = React.useState(value);
+  const [open, setOpen] = React.useState(false);
+  const filtered = query.length > 0
+    ? LAGOS_AREAS.filter(a => a.toLowerCase().includes(query.toLowerCase()))
+    : LAGOS_AREAS;
+
+  return (
+    <div className="relative">
+      <Input
+        value={query}
+        placeholder="Type to search Lagos area..."
+        onChange={e => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto text-sm">
+          {filtered.map(area => (
+            <li
+              key={area}
+              className="px-3 py-2 cursor-pointer hover:bg-orange-50 hover:text-ebunly-orange"
+              onMouseDown={() => { setQuery(area); onChange(area); setOpen(false); }}
+            >
+              {area}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -490,7 +536,10 @@ export function DeliverySandboxPage() {
                       </Field>
                     </div>
                     <Field label="City">
-                      <Input value={shipping.city} onChange={e => setShipping(s => ({ ...s, city: e.target.value }))} />
+                      <CityAutocomplete
+                        value={shipping.city}
+                        onChange={city => setShipping(s => ({ ...s, city, state: 'Lagos' }))}
+                      />
                     </Field>
                     <Field label="Phone">
                       <Input value={shipping.phone} onChange={e => setShipping(s => ({ ...s, phone: e.target.value }))} />
