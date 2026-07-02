@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, X, Gift, Loader2, ChevronDown, Check } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { revalidateOccasions } from '@/lib/revalidate';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Color Swatch Picker ──────────────────────────────────────────────────────
@@ -26,7 +27,6 @@ interface ColorSwatchPickerProps {
 
 function ColorSwatchPicker({ label, value, onChange }: ColorSwatchPickerProps) {
   const customInputRef = useRef<HTMLInputElement>(null);
-  const isPreset = PRESET_COLORS.includes(value.toUpperCase()) || PRESET_COLORS.includes(value);
   const isCustom = value && !PRESET_COLORS.map(c => c.toLowerCase()).includes(value.toLowerCase());
 
   return (
@@ -257,6 +257,7 @@ export function OccasionFormPage() {
         await apiClient.createCategory(formData);
         toast.success(`"${name}" created`);
       }
+      revalidateOccasions();
       navigate('/occasion');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save');

@@ -16,6 +16,7 @@ import {
 import { Plus, Edit, Trash2, Loader2, Gift, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OccasionGridSkeleton } from '@/components/ui/skeletons';
+import { revalidateOccasions } from '@/lib/revalidate';
 import type { Category } from './CategoriesPage';
 
 
@@ -173,6 +174,7 @@ export function OccasionPage() {
       formData.append('featuredOnHomepage', 'false');
       await apiClient.updateCategory(removeTarget._id, formData);
       toast.success(`"${removeTarget.name}" removed from homepage`);
+      revalidateOccasions();
       setRemoveTarget(null);
       fetchOccasions();
     } catch (err: any) {
