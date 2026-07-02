@@ -642,6 +642,36 @@ export function AutomationRuleSkeleton() {
   );
 }
 
+// Occasion card skeleton — matches aspect-4/3 image, circle badge, text bars
+export function OccasionCardSkeleton() {
+  return (
+    <div className="rounded-2xl p-2 bg-gray-100">
+      <div className="relative w-full" style={{ paddingBottom: '75%' }}>
+        <div className="absolute inset-0 rounded-xl overflow-hidden">
+          <Skeleton className="w-full h-full" />
+        </div>
+        <div className="absolute bottom-0 left-3 translate-y-1/2 w-12 h-12 rounded-full bg-white border border-gray-100">
+          <Skeleton className="w-full h-full rounded-full" />
+        </div>
+      </div>
+      <div className="pt-9 px-3 pb-4 space-y-2">
+        <Skeleton className="h-3.5 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+    </div>
+  );
+}
+
+export function OccasionGridSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <OccasionCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 // Email subscriber row skeleton
 export function SubscriberCardSkeleton() {
   return (

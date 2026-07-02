@@ -13,8 +13,10 @@ const ROUTE_MAP: Record<string, string> = {
   campaigns: 'Campaigns',
   automation: 'Automation',
   subscribers: 'Subscribers',
+  occasion: 'Occasions',
   create: 'Create',
   edit: 'Edit',
+  new: 'New',
 };
 
 export function Breadcrumbs() {
@@ -25,26 +27,29 @@ export function Breadcrumbs() {
     return null;
   }
 
+  const isId = (value: string) =>
+    value.length > 20 || (value.includes('-') && value.length > 10);
+
+  const visibleSegments = pathnames
+    .map((value, index) => ({ value, index }))
+    .filter(({ value }) => !isId(value));
+
   return (
     <nav className="flex mb-6 text-sm font-medium text-gray-500" aria-label="Breadcrumb">
       <ol className="flex items-center space-x-2">
-        {pathnames.map((value, index) => {
-          const last = index === pathnames.length - 1;
+        {visibleSegments.map(({ value, index }, i) => {
+          const last = i === visibleSegments.length - 1;
           const to = `/${pathnames.slice(0, index + 1).join('/')}`;
           const label = ROUTE_MAP[value] || value.charAt(0).toUpperCase() + value.slice(1);
 
-          // Handle IDs (very simple check: if it's long and has hex-like pattern or dashes)
-          const isId = value.length > 20 || (value.includes('-') && value.length > 10);
-          const displayLabel = isId ? 'Details' : label;
-
           return (
             <li key={to} className="flex items-center">
-              {index > 0 && <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />}
+              {i > 0 && <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />}
               {last ? (
-                <span className="text-gray-900 font-semibold">{displayLabel}</span>
+                <span className="text-gray-900 font-semibold">{label}</span>
               ) : (
                 <Link to={to} className="hover:text-ebunly-orange transition-colors">
-                  {displayLabel}
+                  {label}
                 </Link>
               )}
             </li>
