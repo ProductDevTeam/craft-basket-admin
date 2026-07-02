@@ -31,6 +31,7 @@ import {
   Upload,
   ChevronRight,
   Check,
+  Star,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -39,7 +40,12 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  pageDescription?: string;
   image?: { url: string; publicId: string };
+  icon?: { url: string; publicId: string };
+  cardBg?: string;
+  mobileBg?: string;
+  featuredOnHomepage?: boolean;
   parent?: { _id: string; name: string; slug: string } | null;
   isActive: boolean;
   sortOrder: number;
@@ -60,7 +66,7 @@ function InlineForm({ parentId, editingCategory, onSave, onCancel, showImage }: 
   const isEdit = !!editingCategory;
   const [name, setName] = useState(editingCategory?.name || '');
   const [description, setDescription] = useState(editingCategory?.description || '');
-  const [pageDescription, setPageDescription] = useState((editingCategory as any)?.pageDescription || '');
+  const [pageDescription, setPageDescription] = useState(editingCategory?.pageDescription || '');
   const [sortOrder, setSortOrder] = useState(editingCategory?.sortOrder || 0);
   const [isActive, setIsActive] = useState(editingCategory?.isActive ?? true);
   const [image, setImage] = useState<File | null>(null);
@@ -459,9 +465,14 @@ export function CategoriesPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {cat.name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-sm font-medium truncate ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                            {cat.name}
+                          </p>
+                          {cat.featuredOnHomepage && (
+                            <Star className="w-3 h-3 text-amber-400 shrink-0" fill="currentColor" />
+                          )}
+                        </div>
                         <p className="text-[10px] text-gray-400">
                           {childCount} subcategor{childCount === 1 ? 'y' : 'ies'}
                           {!cat.isActive && ' · Inactive'}

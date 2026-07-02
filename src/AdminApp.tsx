@@ -21,6 +21,8 @@ import { EmailCampaignDetailsPage } from './components/email/EmailCampaignDetail
 import { AutomationRulesPage } from './components/email/AutomationRulesPage';
 import { SubscribersPage } from './components/email/SubscribersPage';
 import { DeliverySandboxPage } from './components/DeliverySandboxPage';
+import { OccasionPage } from './components/OccasionPage';
+import { OccasionFormPage } from './components/OccasionFormPage';
 
 
 function AdminContent() {
@@ -60,6 +62,9 @@ function AdminContent() {
         <Route path="/email/campaigns/:id" element={<EmailCampaignDetailsPage />} />
         <Route path="/email/automation" element={<AutomationRulesPage />} />
         <Route path="/email/subscribers" element={<SubscribersPage />} />
+        <Route path="/occasion" element={<OccasionPage />} />
+        <Route path="/occasion/new" element={<OccasionFormPage />} />
+        <Route path="/occasion/:id/edit" element={<OccasionFormPage />} />
         <Route path="/delivery-sandbox" element={<DeliverySandboxPage />} />
       </Routes>
     </AdminLayout>

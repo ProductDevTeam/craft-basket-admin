@@ -348,12 +348,14 @@ class ApiClient {
     limit?: number;
     search?: string;
     activeOnly?: boolean;
+    featuredOnHomepage?: boolean;
   }): Promise<ApiResponse<any[]>> {
     const qp = new URLSearchParams();
     if (params?.page) qp.append('page', params.page.toString());
     if (params?.limit) qp.append('limit', params.limit.toString());
     if (params?.search) qp.append('search', params.search);
     if (params?.activeOnly) qp.append('activeOnly', 'true');
+    if (params?.featuredOnHomepage) qp.append('featuredOnHomepage', 'true');
     return this.request(`/categories?${qp.toString()}`);
   }
 
