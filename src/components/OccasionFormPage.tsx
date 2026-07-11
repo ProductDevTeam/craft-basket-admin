@@ -5,12 +5,22 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Upload, X, Gift, Loader2, ChevronDown, Check } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { revalidateOccasions } from '@/lib/revalidate';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Color Swatch Picker ──────────────────────────────────────────────────────
+
+const OCCASION_TAGS = [
+  'Birthday', 'Proposal', 'Engagement', 'Bridal Shower', 'Wedding',
+  'Bridesmaid', 'Groomsmen', 'Wedding Souvenir', 'Honeymoon',
+  'Conference', 'Employee Appreciation', 'Client Appreciation', 'Onboarding',
+  'Retirement', 'Baby Shower', 'Naming Ceremony', 'Newborn Welcome',
+  'Graduation', 'Promotion', 'Housewarming', 'New Job', 'Anniversary',
+  'Valentine', "Mother's Day", "Father's Day", 'Christmas', 'Easter', 'Eid',
+];
 
 const PRESET_COLORS = [
   '#E4F5EF', '#D4EFE9', '#FCF3E3', '#FAD9CE',
@@ -204,6 +214,8 @@ export function OccasionFormPage() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [pageDescription, setPageDescription] = useState('');
+  const [linkedOccasionTags, setLinkedOccasionTags] = useState<string[]>([]);
   const [cardBg, setCardBg] = useState('#E4F5EF');
   const [mobileBg, setMobileBg] = useState('#D4EFE9');
   const [iconEmoji, setIconEmoji] = useState('');
@@ -219,6 +231,8 @@ export function OccasionFormPage() {
       if (!cat) return;
       setName(cat.name || '');
       setDescription(cat.description || '');
+      setPageDescription(cat.pageDescription || '');
+      setLinkedOccasionTags(cat.linkedOccasionTags || []);
       setCardBg(cat.cardBg || '#E4F5EF');
       setMobileBg(cat.mobileBg || '#D4EFE9');
       setIconEmoji(cat.iconEmoji || '');
@@ -244,6 +258,8 @@ export function OccasionFormPage() {
       const formData = new FormData();
       formData.append('name', name.trim());
       formData.append('description', description.trim());
+      formData.append('pageDescription', pageDescription.trim());
+      formData.append('linkedOccasionTags', JSON.stringify(linkedOccasionTags));
       formData.append('featuredOnHomepage', 'true');
       formData.append('cardBg', cardBg);
       formData.append('mobileBg', mobileBg);
@@ -328,6 +344,54 @@ export function OccasionFormPage() {
                 placeholder="e.g. Gifts & Keepsakes"
                 className="rounded-xl h-10"
               />
+            </div>
+          </div>
+
+          {/* Page description */}
+          <div>
+            <Label className="text-xs text-gray-500 mb-1.5 block">Page Description</Label>
+            <Textarea
+              value={pageDescription}
+              onChange={(e) => setPageDescription(e.target.value)}
+              placeholder="Shown on the occasion landing page, e.g. Find the perfect gifts for weddings, anniversaries and more."
+              className="rounded-xl resize-none text-sm"
+              rows={3}
+            />
+            <p className="text-[11px] text-gray-400 mt-1">Appears under the title when users click through to this occasion</p>
+          </div>
+
+          {/* Occasion tags */}
+          <div>
+            <Label className="text-xs text-gray-500 mb-1.5 block">
+              Occasion Tags
+              {linkedOccasionTags.length > 0 && (
+                <span className="ml-2 text-[11px] font-normal text-gray-400">{linkedOccasionTags.length} selected</span>
+              )}
+            </Label>
+            <p className="text-[11px] text-gray-400 mb-2.5">Products with these tags will appear on this occasion's page</p>
+            <div className="flex flex-wrap gap-2">
+              {OCCASION_TAGS.map((tag) => {
+                const selected = linkedOccasionTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setLinkedOccasionTags((prev) =>
+                        selected ? prev.filter((t) => t !== tag) : [...prev, tag]
+                      )
+                    }
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                      selected
+                        ? 'bg-[#F6511E] border-[#F6511E] text-white'
+                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {selected && <span className="mr-1">✓</span>}
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
