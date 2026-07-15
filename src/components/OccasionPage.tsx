@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Trash2, Loader2, Gift, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, Gift, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OccasionGridSkeleton } from '@/components/ui/skeletons';
 import { revalidateOccasions } from '@/lib/revalidate';
@@ -30,11 +30,14 @@ interface OccasionCardProps {
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onToggle: () => void;
   isReordering: boolean;
+  isToggling: boolean;
 }
 
-function OccasionCard({ occasion, isFirst, isLast, onEdit, onRemove, onMoveUp, onMoveDown, isReordering }: OccasionCardProps) {
+function OccasionCard({ occasion, isFirst, isLast, onEdit, onRemove, onMoveUp, onMoveDown, onToggle, isReordering, isToggling }: OccasionCardProps) {
   const iconEmoji = (occasion as any).iconEmoji as string | undefined;
+  const isActive = occasion.isActive !== false;
 
   return (
     <motion.div
@@ -42,7 +45,7 @@ function OccasionCard({ occasion, isFirst, isLast, onEdit, onRemove, onMoveUp, o
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      className="group"
+      className={`group transition-opacity ${!isActive ? 'opacity-50' : ''}`}
     >
       <div
         className="rounded-2xl p-2 overflow-hidden"
@@ -58,6 +61,25 @@ function OccasionCard({ occasion, isFirst, isLast, onEdit, onRemove, onMoveUp, o
                 <Gift className="w-8 h-8 text-gray-300" />
               </div>
             )}
+
+            {/* Live/Off badge — always visible */}
+            <button
+              onClick={onToggle}
+              disabled={isToggling}
+              className={`absolute top-2 left-2 flex items-center justify-center w-6 h-6 rounded-full transition-all ${
+                isActive
+                  ? 'bg-green-500 text-white hover:bg-green-600'
+                  : 'bg-gray-400 text-white hover:bg-gray-500'
+              }`}
+            >
+              {isToggling ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : isActive ? (
+                <Eye className="w-3 h-3" />
+              ) : (
+                <EyeOff className="w-3 h-3" />
+              )}
+            </button>
 
             {/* Hover actions */}
             <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -121,6 +143,7 @@ export function OccasionPage() {
   const [removeTarget, setRemoveTarget] = useState<Category | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchOccasions = async () => {
     setIsLoading(true);
@@ -136,6 +159,25 @@ export function OccasionPage() {
   };
 
   useEffect(() => { fetchOccasions(); }, []);
+
+  const handleToggle = async (occ: Category) => {
+    setTogglingId(occ._id);
+    // Optimistic update
+    setOccasions((prev) =>
+      prev.map((o) => o._id === occ._id ? { ...o, isActive: !o.isActive } : o)
+    );
+    try {
+      const formData = new FormData();
+      formData.append('isActive', String(occ.isActive === false ? true : false));
+      await apiClient.updateCategory(occ._id, formData);
+      revalidateOccasions();
+    } catch (err: any) {
+      toast.error('Failed to update');
+      fetchOccasions(); // restore on error
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const handleReorder = async (index: number, direction: 'up' | 'down') => {
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
@@ -190,7 +232,14 @@ export function OccasionPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Occasions</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage gift basket occasions shown on the homepage</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage homepage occasions
+            {occasions.length > 0 && (
+              <span className="ml-2 font-medium">
+                · <span className="text-green-600">{Math.min(occasions.filter(o => o.isActive !== false).length, 5)} / 5</span> live
+              </span>
+            )}
+          </p>
         </div>
         <Button
           size="sm"
@@ -226,7 +275,9 @@ export function OccasionPage() {
                   onRemove={() => setRemoveTarget(occ)}
                   onMoveUp={() => handleReorder(i, 'up')}
                   onMoveDown={() => handleReorder(i, 'down')}
+                  onToggle={() => handleToggle(occ)}
                   isReordering={isReordering}
+                  isToggling={togglingId === occ._id}
                 />
               ))}
             </AnimatePresence>
