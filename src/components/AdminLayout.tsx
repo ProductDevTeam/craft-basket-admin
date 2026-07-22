@@ -25,6 +25,7 @@ import {
   FileText,
   Truck,
   Gift,
+  Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ebunlyLogo from '@/assets/ebunly-logo.png';
@@ -66,6 +67,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     if (path === '/occasion') {
       return location.pathname.startsWith('/occasion');
     }
+    // For gift add-ons
+    if (path === '/gift-addons') {
+      return location.pathname.startsWith('/gift-addons');
+    }
     // For email section, match all /email/* routes
     if (path === '/email') {
       return location.pathname.startsWith('/email');
@@ -94,6 +99,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       name: 'Occasions',
       path: '/occasion',
       icon: Gift,
+    },
+    {
+      name: 'Gift Add-ons',
+      path: '/gift-addons',
+      icon: Tag,
     },
     {
       name: 'Vendors',
