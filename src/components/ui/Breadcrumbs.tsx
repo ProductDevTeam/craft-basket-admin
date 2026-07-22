@@ -14,10 +14,14 @@ const ROUTE_MAP: Record<string, string> = {
   automation: 'Automation',
   subscribers: 'Subscribers',
   occasion: 'Occasions',
+  'gift-addons': 'Gift Add-ons',
   create: 'Create',
   edit: 'Edit',
   new: 'New',
 };
+
+// Structural URL segments that don't correspond to a real page — skip them in the breadcrumb
+const SKIP_SEGMENTS = new Set(['category', 'item']);
 
 export function Breadcrumbs() {
   const location = useLocation();
@@ -32,7 +36,7 @@ export function Breadcrumbs() {
 
   const visibleSegments = pathnames
     .map((value, index) => ({ value, index }))
-    .filter(({ value }) => !isId(value));
+    .filter(({ value }) => !isId(value) && !SKIP_SEGMENTS.has(value));
 
   return (
     <nav className="flex mb-6 text-sm font-medium text-gray-500" aria-label="Breadcrumb">

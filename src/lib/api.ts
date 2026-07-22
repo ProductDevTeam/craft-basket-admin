@@ -380,6 +380,46 @@ class ApiClient {
   async deleteCategory(id: string): Promise<ApiResponse<null>> {
     return this.request(`/categories/${id}`, { method: 'DELETE' });
   }
+
+  // ─── Gift Add-ons ──────────────────────────────────────────────────────────
+
+  async getAddonCategories(): Promise<ApiResponse<any[]>> {
+    return this.request('/gift-addons/admin/categories');
+  }
+
+  async createAddonCategory(data: Record<string, any>): Promise<ApiResponse<any>> {
+    return this.request('/gift-addons/admin/categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAddonCategory(id: string, data: Record<string, any>): Promise<ApiResponse<any>> {
+    return this.request(`/gift-addons/admin/categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAddonCategory(id: string): Promise<ApiResponse<null>> {
+    return this.request(`/gift-addons/admin/categories/${id}`, { method: 'DELETE' });
+  }
+
+  async getAddonItems(categoryId: string): Promise<ApiResponse<any[]>> {
+    return this.request(`/gift-addons/admin/categories/${categoryId}/items`);
+  }
+
+  async createAddonItem(categoryId: string, formData: FormData): Promise<ApiResponse<any>> {
+    return this.request(`/gift-addons/admin/categories/${categoryId}/items`, { method: 'POST', body: formData });
+  }
+
+  async updateAddonItem(itemId: string, formData: FormData): Promise<ApiResponse<any>> {
+    return this.request(`/gift-addons/admin/items/${itemId}`, { method: 'PATCH', body: formData });
+  }
+
+  async deleteAddonItem(itemId: string): Promise<ApiResponse<null>> {
+    return this.request(`/gift-addons/admin/items/${itemId}`, { method: 'DELETE' });
+  }
 }
 
 export const apiClient = new ApiClient();

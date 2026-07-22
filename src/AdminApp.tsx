@@ -23,6 +23,9 @@ import { SubscribersPage } from './components/email/SubscribersPage';
 import { DeliverySandboxPage } from './components/DeliverySandboxPage';
 import { OccasionPage } from './components/OccasionPage';
 import { OccasionFormPage } from './components/OccasionFormPage';
+import { GiftAddonsPage } from './components/GiftAddonsPage';
+import { GiftAddonCategoryFormPage } from './components/GiftAddonCategoryFormPage';
+import { GiftAddonItemFormPage } from './components/GiftAddonItemFormPage';
 
 
 function AdminContent() {
@@ -65,6 +68,11 @@ function AdminContent() {
         <Route path="/occasion" element={<OccasionPage />} />
         <Route path="/occasion/new" element={<OccasionFormPage />} />
         <Route path="/occasion/:id/edit" element={<OccasionFormPage />} />
+        <Route path="/gift-addons" element={<GiftAddonsPage />} />
+        <Route path="/gift-addons/category/new" element={<GiftAddonCategoryFormPage />} />
+        <Route path="/gift-addons/category/:id/edit" element={<GiftAddonCategoryFormPage />} />
+        <Route path="/gift-addons/category/:categoryId/item/new" element={<GiftAddonItemFormPage />} />
+        <Route path="/gift-addons/category/:categoryId/item/:itemId/edit" element={<GiftAddonItemFormPage />} />
         <Route path="/delivery-sandbox" element={<DeliverySandboxPage />} />
       </Routes>
     </AdminLayout>
