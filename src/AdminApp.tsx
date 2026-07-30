@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth, RoleGuard } from './contexts/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { LoginPage } from './components/LoginPage';
@@ -51,9 +51,9 @@ function AdminContent() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/products" element={<ProductsListPage />} />
         <Route path="/products/:id" element={<ProductViewPage />} />
-        <Route path="/create-product" element={<CreateProductPage />} />
-        <Route path="/edit-product/:id" element={<CreateProductPage />} />
-        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/create-product" element={<RoleGuard roles={['super_admin', 'admin']}><CreateProductPage /></RoleGuard>} />
+        <Route path="/edit-product/:id" element={<RoleGuard roles={['super_admin', 'admin']}><CreateProductPage /></RoleGuard>} />
+        <Route path="/categories" element={<RoleGuard roles={['super_admin', 'admin']}><CategoriesPage /></RoleGuard>} />
         <Route path="/vendors" element={<VendorsPage />} />
         <Route path="/email" element={<EmailOverviewPage />} />
         <Route path="/email/templates" element={<EmailTemplatesPage />} />
@@ -65,15 +65,15 @@ function AdminContent() {
         <Route path="/email/campaigns/:id" element={<EmailCampaignDetailsPage />} />
         <Route path="/email/automation" element={<AutomationRulesPage />} />
         <Route path="/email/subscribers" element={<SubscribersPage />} />
-        <Route path="/occasion" element={<OccasionPage />} />
-        <Route path="/occasion/new" element={<OccasionFormPage />} />
-        <Route path="/occasion/:id/edit" element={<OccasionFormPage />} />
-        <Route path="/gift-addons" element={<GiftAddonsPage />} />
-        <Route path="/gift-addons/category/new" element={<GiftAddonCategoryFormPage />} />
-        <Route path="/gift-addons/category/:id/edit" element={<GiftAddonCategoryFormPage />} />
-        <Route path="/gift-addons/category/:categoryId/item/new" element={<GiftAddonItemFormPage />} />
-        <Route path="/gift-addons/category/:categoryId/item/:itemId/edit" element={<GiftAddonItemFormPage />} />
-        <Route path="/delivery-sandbox" element={<DeliverySandboxPage />} />
+        <Route path="/occasion" element={<RoleGuard roles={['super_admin', 'admin']}><OccasionPage /></RoleGuard>} />
+        <Route path="/occasion/new" element={<RoleGuard roles={['super_admin', 'admin']}><OccasionFormPage /></RoleGuard>} />
+        <Route path="/occasion/:id/edit" element={<RoleGuard roles={['super_admin', 'admin']}><OccasionFormPage /></RoleGuard>} />
+        <Route path="/gift-addons" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonsPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/new" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonCategoryFormPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/:id/edit" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonCategoryFormPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/:categoryId/item/new" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonItemFormPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/:categoryId/item/:itemId/edit" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonItemFormPage /></RoleGuard>} />
+        <Route path="/delivery-sandbox" element={<RoleGuard roles={['super_admin', 'admin']}><DeliverySandboxPage /></RoleGuard>} />
       </Routes>
     </AdminLayout>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { CategoriesPageSkeleton } from '@/components/ui/skeletons';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuth, isSuperAdmin } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -245,6 +246,8 @@ function InlineForm({ parentId, editingCategory, onSave, onCancel, showImage }: 
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 export function CategoriesPage() {
+  const { user } = useAuth();
+  const canEdit = isSuperAdmin(user?.role);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
@@ -396,14 +399,16 @@ export function CategoriesPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Categories</span>
-              <button
-                onClick={() => { setShowAddParent(true); setEditingParent(null); }}
-                className="text-xs font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
-                style={{ color: '#F6511E' }}
-              >
-                <Plus className="w-3 h-3" />
-                Add
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => { setShowAddParent(true); setEditingParent(null); }}
+                  className="text-xs font-medium flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  style={{ color: '#F6511E' }}
+                >
+                  <Plus className="w-3 h-3" />
+                  Add
+                </button>
+              )}
             </div>
 
             {/* Add Parent Form (inline) */}
@@ -423,15 +428,17 @@ export function CategoriesPage() {
                 <FolderTree className="w-10 h-10 text-gray-200 mb-3" />
                 <p className="text-sm font-medium text-gray-500 mb-1">No categories yet</p>
                 <p className="text-xs text-gray-400 mb-4">Create your first storefront category</p>
-                <Button
-                  size="sm"
-                  onClick={() => setShowAddParent(true)}
-                  className="text-white rounded-xl text-xs"
-                  style={{ backgroundColor: '#F6511E' }}
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Category
-                </Button>
+                {canEdit && (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAddParent(true)}
+                    className="text-white rounded-xl text-xs"
+                    style={{ backgroundColor: '#F6511E' }}
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Category
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
@@ -479,21 +486,23 @@ export function CategoriesPage() {
                         </p>
                       </div>
 
-                      {/* Actions on hover */}
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEditingParent(cat); setShowAddParent(false); }}
-                          className="p-1 rounded-md hover:bg-gray-200 transition-colors"
-                        >
-                          <Edit className="w-3 h-3 text-gray-400" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(cat); }}
-                          className="p-1 rounded-md hover:bg-red-50 transition-colors"
-                        >
-                          <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-500" />
-                        </button>
-                      </div>
+                      {/* Actions on hover — super_admin only */}
+                      {canEdit && (
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingParent(cat); setShowAddParent(false); }}
+                            className="p-1 rounded-md hover:bg-gray-200 transition-colors"
+                          >
+                            <Edit className="w-3 h-3 text-gray-400" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(cat); }}
+                            className="p-1 rounded-md hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                      )}
 
                       <ChevronRight className={`w-4 h-4 shrink-0 transition-colors ${
                         isSelected ? 'text-[#F6511E]' : 'text-gray-300'
@@ -517,15 +526,17 @@ export function CategoriesPage() {
                       <p className="text-sm text-gray-500 mt-0.5">{selectedParent.description}</p>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => { setShowAddChild(true); setEditingChild(null); }}
-                    className="text-white rounded-xl text-xs h-8"
-                    style={{ backgroundColor: '#F6511E' }}
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Subcategory
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      size="sm"
+                      onClick={() => { setShowAddChild(true); setEditingChild(null); }}
+                      className="text-white rounded-xl text-xs h-8"
+                      style={{ backgroundColor: '#F6511E' }}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Subcategory
+                    </Button>
+                  )}
                 </div>
 
                 {/* Add Child Form (inline) */}
@@ -549,7 +560,7 @@ export function CategoriesPage() {
                         ? `No ${statusFilter !== 'all' ? statusFilter : ''} subcategories match`
                         : 'No subcategories yet'}
                     </p>
-                    {!(searchQuery || statusFilter !== 'all') && (
+                    {!(searchQuery || statusFilter !== 'all') && canEdit && (
                       <Button
                         size="sm"
                         variant="link"
@@ -622,7 +633,8 @@ export function CategoriesPage() {
                                 </div>
                                 </div>
 
-                                {/* Actions */}
+                                {/* Actions — super_admin only */}
+                                {canEdit && (
                                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                                   <button
                                     onClick={() => { setEditingChild(child); setShowAddChild(false); }}
@@ -637,6 +649,7 @@ export function CategoriesPage() {
                                     <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-500" />
                                   </button>
                                 </div>
+                                )}
                               </div>
                             </CardContent>
                           </Card>

@@ -1,6 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
 import { User } from '../types';
 import { apiClient } from '../lib/api';
+
+const STAFF_ROLES = ['admin', 'super_admin', 'support'] as const;
+type StaffRole = typeof STAFF_ROLES[number];
+
+export const isSuperAdmin = (role?: string): boolean => role === 'super_admin';
+export const isAdminOrAbove = (role?: string): boolean => role === 'admin' || role === 'super_admin';
+export const isStaff = (role?: string): boolean => STAFF_ROLES.includes(role as StaffRole);
+
+export function RoleGuard({
+  roles,
+  children,
+  fallback,
+}: {
+  roles: string[];
+  children: ReactNode;
+  fallback?: ReactNode;
+}) {
+  const { user } = useAuth();
+  if (!user || !roles.includes(user.role)) {
+    return <>{fallback ?? <Navigate to="/dashboard" replace />}</>;
+  }
+  return <>{children}</>;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -25,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken && storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.role === 'admin') {
+        if (STAFF_ROLES.includes(parsedUser.role as StaffRole)) {
           setToken(storedToken);
           setUser(parsedUser);
           apiClient.setToken(storedToken);
@@ -47,8 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (response.success && response.data) {
       const { token: newToken, user: userData } = response.data;
       
-      if (userData.role !== 'admin') {
-        throw new Error('Access denied. Admin privileges required.');
+      if (!STAFF_ROLES.includes(userData.role as StaffRole)) {
+        throw new Error('Access denied. Staff privileges required.');
       }
       
       setToken(newToken);

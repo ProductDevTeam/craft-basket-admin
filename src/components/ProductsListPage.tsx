@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuth, isAdminOrAbove } from '@/contexts/AuthContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { OCCASION_OPTIONS, RECIPIENT_OPTIONS, STYLE_TAG_OPTIONS } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from '@/components/ui/popover';
@@ -111,6 +112,7 @@ const DELIVERY_OPTIONS = [
 
 export function ProductsListPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -304,16 +306,18 @@ export function ProductsListPage() {
               </Button>
             </motion.div>
           )}
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button
-              onClick={() => navigate('/create-product')}
-              className="text-white gap-2"
-              style={{ backgroundColor: '#F6511E' }}
-            >
-              <Plus className="w-4 h-4" />
-              Create Product
-            </Button>
-          </motion.div>
+          {isAdminOrAbove(user?.role) && (
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => navigate('/create-product')}
+                className="text-white gap-2"
+                style={{ backgroundColor: '#F6511E' }}
+              >
+                <Plus className="w-4 h-4" />
+                Create Product
+              </Button>
+            </motion.div>
+          )}
         </div>
       </motion.div>
 
