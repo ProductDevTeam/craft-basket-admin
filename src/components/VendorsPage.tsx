@@ -41,11 +41,13 @@ import {
 import { apiClient } from '@/lib/api';
 import { Vendor } from '@/types';
 import { toast } from 'sonner';
+import { useAuth, isSuperAdmin } from '@/contexts/AuthContext';
 import { motion, AnimatePresence, PageTransition } from '@/lib/motion';
 import { VendorsTableSkeleton } from '@/components/ui/skeletons';
 
 export function VendorsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -116,14 +118,16 @@ export function VendorsPage() {
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button className="text-white" style={{ backgroundColor: '#F6511E' }}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Invite Vendor
-              </Button>
-            </motion.div>
-          </DialogTrigger>
+          {isSuperAdmin(user?.role) && (
+            <DialogTrigger asChild>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button className="text-white" style={{ backgroundColor: '#F6511E' }}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Invite Vendor
+                </Button>
+              </motion.div>
+            </DialogTrigger>
+          )}
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Invite Vendor</DialogTitle>

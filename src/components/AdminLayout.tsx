@@ -79,61 +79,26 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return location.pathname === path;
   };
 
-  const navigationItems: { name: string; path: string; icon: React.ElementType; disabled?: boolean; badge?: string }[] = [
-    {
-      name: 'Dashboard',
-      path: '/dashboard',
-      icon: LayoutDashboard,
-    },
-    {
-      name: 'Products',
-      path: '/products',
-      icon: ShoppingBag,
-    },
-    {
-      name: 'Categories',
-      path: '/categories',
-      icon: FolderTree,
-    },
-    {
-      name: 'Occasions',
-      path: '/occasion',
-      icon: Gift,
-    },
-    {
-      name: 'Gift Add-ons',
-      path: '/gift-addons',
-      icon: Tag,
-    },
-    {
-      name: 'Vendors',
-      path: '/vendors',
-      icon: Users,
-    },
-    {
-      name: 'Email',
-      path: '/email',
-      icon: Mail,
-    },
-    {
-      name: 'Orders',
-      path: '/orders',
-      icon: ShoppingCart,
-      disabled: true,
-    },
-    {
-      name: 'Analytics',
-      path: '/analytics',
-      icon: BarChart3,
-      disabled: true,
-    },
-    {
-      name: 'Delivery Test',
-      path: '/delivery-sandbox',
-      icon: Truck,
-      badge: 'Test',
-    },
+  const ROLE_LABELS: Record<string, string> = {
+    super_admin: 'Super Admin',
+    admin: 'Admin',
+    support: 'Support',
+  };
+
+  const allNavItems: { name: string; path: string; icon: React.ElementType; disabled?: boolean; badge?: string; roles: string[] }[] = [
+    { name: 'Dashboard',      path: '/dashboard',       icon: LayoutDashboard, roles: ['super_admin', 'admin', 'support'] },
+    { name: 'Products',       path: '/products',        icon: ShoppingBag,     roles: ['super_admin', 'admin', 'support'] },
+    { name: 'Categories',     path: '/categories',      icon: FolderTree,      roles: ['super_admin', 'admin'] },
+    { name: 'Occasions',      path: '/occasion',        icon: Gift,            roles: ['super_admin', 'admin'] },
+    { name: 'Gift Add-ons',   path: '/gift-addons',     icon: Tag,             roles: ['super_admin', 'admin'] },
+    { name: 'Vendors',        path: '/vendors',         icon: Users,           roles: ['super_admin', 'admin', 'support'] },
+    { name: 'Email',          path: '/email',           icon: Mail,            roles: ['super_admin', 'admin', 'support'] },
+    { name: 'Orders',         path: '/orders',          icon: ShoppingCart,    roles: ['super_admin', 'admin', 'support'], disabled: true },
+    { name: 'Analytics',      path: '/analytics',       icon: BarChart3,       roles: ['super_admin', 'admin'], disabled: true },
+    { name: 'Delivery Test',  path: '/delivery-sandbox',icon: Truck,           roles: ['super_admin', 'admin'], badge: 'Test' },
   ];
+
+  const navigationItems = allNavItems.filter(item => item.roles.includes(user?.role || ''));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -196,7 +161,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <p className="text-sm font-bold text-gray-900 truncate">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">Admin Account</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">{ROLE_LABELS[user?.role || ''] ?? 'Staff'}</p>
                 </div>
                 <ChevronsUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-900 transition-colors" />
               </button>
@@ -298,7 +263,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <p className="text-sm font-bold text-gray-900 truncate">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">Admin Account</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">{ROLE_LABELS[user?.role || ''] ?? 'Staff'}</p>
                 </div>
                 <ChevronsUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-900 transition-colors" />
               </button>
