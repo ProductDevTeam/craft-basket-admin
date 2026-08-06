@@ -144,10 +144,10 @@ export function CreateProductPage() {
         }));
         break;
       case 2:
-        setTouched((prev) => ({ ...prev, recipients: true }));
+        setTouched((prev) => ({ ...prev, category: true, recipients: true }));
         break;
       case 3:
-        setTouched((prev) => ({ ...prev, basePrice: true, stock: true }));
+        setTouched((prev) => ({ ...prev, basePrice: true, discountPercentage: true, stock: true }));
         break;
       default:
         break;
@@ -456,6 +456,11 @@ export function CreateProductPage() {
         }
         return true;
       case 2:
+        if (!selectedCoreCategory) {
+          markStepTouched(2);
+          toast.error('Please select a category');
+          return false;
+        }
         if (selectedRecipients.length === 0) {
           markStepTouched(2);
           toast.error('Please select at least one recipient (who is this gift for?)');
@@ -463,9 +468,14 @@ export function CreateProductPage() {
         }
         return true;
       case 3:
-        if (!basePrice) {
+        if (!basePrice || parseFloat(basePrice) <= 0) {
           markStepTouched(3);
-          toast.error('Please enter the base price');
+          toast.error('Please enter a valid base price greater than 0');
+          return false;
+        }
+        if (discountPercentage && (parseFloat(discountPercentage) < 0 || parseFloat(discountPercentage) > 100)) {
+          setTouched((prev) => ({ ...prev, discountPercentage: true }));
+          toast.error('Discount must be between 0 and 100');
           return false;
         }
         if (!stock || parseInt(stock, 10) < 1) {
@@ -1051,9 +1061,9 @@ export function CreateProductPage() {
                   {/* ── 3-level Category Cascade ─────────────────────────── */}
                   <div className="space-y-3">
                     <div className="space-y-2">
-                      <Label htmlFor="coreCategory">Category</Label>
+                      <Label htmlFor="coreCategory">Category <span className="text-red-500">*</span></Label>
                       <Select value={selectedCoreCategory} onValueChange={handleCoreCategoryChange}>
-                        <SelectTrigger id="coreCategory" type="button">
+                        <SelectTrigger id="coreCategory" type="button" className={!selectedCoreCategory && (isSubmitting || touched.category) ? 'border-red-500' : ''}>
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1062,6 +1072,9 @@ export function CreateProductPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {!selectedCoreCategory && (isSubmitting || touched.category) && (
+                        <p className="text-xs text-red-500 mt-1">Category is required</p>
+                      )}
                     </div>
 
                     {subcategoryOptions.length > 0 && (
@@ -1211,13 +1224,13 @@ export function CreateProductPage() {
                         onBlur={() => setTouchedField('basePrice')}
                         placeholder="0.00"
                         className={
-                          !basePrice && (isSubmitting || touched.basePrice)
+                          (!basePrice || parseFloat(basePrice) <= 0) && (isSubmitting || touched.basePrice)
                             ? 'border-red-500 ring-1 ring-red-500'
                             : ''
                         }
                       />
-                      {!basePrice && (isSubmitting || touched.basePrice) && (
-                        <p className="text-sm text-red-600 mt-1">Base price is required</p>
+                      {(!basePrice || parseFloat(basePrice) <= 0) && (isSubmitting || touched.basePrice) && (
+                        <p className="text-sm text-red-600 mt-1">Please enter a valid price greater than 0</p>
                       )}
                     </div>
                     <div className="space-y-2">
@@ -1243,7 +1256,11 @@ export function CreateProductPage() {
                         value={discountPercentage}
                         onChange={(e) => setDiscountPercentage(e.target.value)}
                         placeholder="e.g., 20"
+                        className={discountPercentage && (parseFloat(discountPercentage) < 0 || parseFloat(discountPercentage) > 100) ? 'border-red-500' : ''}
                       />
+                      {discountPercentage && (parseFloat(discountPercentage) < 0 || parseFloat(discountPercentage) > 100) && (
+                        <p className="text-xs text-red-500 mt-1">Discount must be between 0 and 100</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 min-h-[24px]">
@@ -1409,7 +1426,11 @@ export function CreateProductPage() {
                         value={estimatedDeliveryDays}
                         onChange={(e) => setEstimatedDeliveryDays(e.target.value)}
                         placeholder="e.g., 3-5 or 7"
+                        className={estimatedDeliveryDays && !/^\d+(-\d+)?$/.test(estimatedDeliveryDays.trim()) ? 'border-red-500' : ''}
                       />
+                      {estimatedDeliveryDays && !/^\d+(-\d+)?$/.test(estimatedDeliveryDays.trim()) && (
+                        <p className="text-xs text-red-500 mt-1">Enter a number or range e.g. 3 or 3-5</p>
+                      )}
                     </div>
                   </div>
 
