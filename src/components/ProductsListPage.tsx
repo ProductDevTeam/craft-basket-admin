@@ -78,6 +78,12 @@ interface Product {
     url: string;
     isMain: boolean;
   }>;
+  videos?: Array<{
+    url: string;
+    publicId: string;
+    thumbnail?: string;
+    isMain: boolean;
+  }>;
   stock: number;
   isActive: boolean;
   isFeatured: boolean;
@@ -240,8 +246,15 @@ export function ProductsListPage() {
   };
 
   const mainImage = (product: Product) => {
+    const mainVideo = product.videos?.find((v) => v.isMain && v.thumbnail);
+    if (mainVideo) return mainVideo.thumbnail!;
     const main = product.images.find((img) => img.isMain);
     return main?.url || product.images[0]?.url || '/placeholder-product.png';
+  };
+
+  const mainVideoUrl = (product: Product): string | undefined => {
+    const main = product.videos?.find((v) => v.isMain);
+    return (main ?? product.videos?.[0])?.url;
   };
 
   const handleDeleteClick = (productId: string, productName: string) => {
@@ -741,12 +754,31 @@ export function ProductsListPage() {
                       onClick={() => navigate(`/products/${product._id}`)}
                     >
                       {/* Product Image */}
-                      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                      <div
+                        className="relative aspect-[4/3] overflow-hidden bg-gray-100"
+                        onMouseEnter={(e) => {
+                          (e.currentTarget.querySelector('video') as HTMLVideoElement | null)?.play();
+                        }}
+                        onMouseLeave={(e) => {
+                          const v = e.currentTarget.querySelector('video') as HTMLVideoElement | null;
+                          if (v) { v.pause(); v.currentTime = 0; }
+                        }}
+                      >
                         <img
                           src={mainImage(product)}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                        {mainVideoUrl(product) && (
+                          <video
+                            src={mainVideoUrl(product)}
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                            className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          />
+                        )}
                         {/* Gradient overlay */}
                         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/50 to-transparent" />
                         {/* Status badges */}
