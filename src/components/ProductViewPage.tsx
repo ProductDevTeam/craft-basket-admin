@@ -160,9 +160,9 @@ export function ProductViewPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 truncate">{product.name}</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold text-gray-900 break-words">{product.name}</h1>
           <p className="text-sm text-gray-400 mt-0.5">SKU: {product.sku}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
