@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 import {
@@ -53,6 +53,20 @@ import {
   CommandList,
 } from '@/components/ui/command';
 
+const PERSONALIZATION_CHIP_OPTIONS = [
+  { name: 'Engraving', extraDays: 2 },
+  { name: 'Print-on', extraDays: 0 },
+  { name: 'Sticker', extraDays: 0 },
+];
+
+const DELIVERY_PRESETS = [
+  { value: '1-2', label: '1-2 business days' },
+  { value: '3-5', label: '3-5 business days' },
+  { value: '5-7', label: '5-7 business days' },
+  { value: '7-10', label: '7-10 business days' },
+  { value: '10-14', label: '10-14 business days' },
+];
+
 const STEPS = [
   { id: 1, name: 'Product Details', description: 'Name, description & media' },
   { id: 2, name: 'Category', description: 'Category, tags & audience' },
@@ -76,6 +90,10 @@ export function CreateProductPage() {
     Array<{ url: string; publicId: string; isMain: boolean }>
   >([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragIndex = useRef<number | null>(null);
+  const [newDragOverIndex, setNewDragOverIndex] = useState<number | null>(null);
+  const newDragIndex = useRef<number | null>(null);
   const [vendorSearchOpen, setVendorSearchOpen] = useState(false);
 
 
@@ -85,7 +103,7 @@ export function CreateProductPage() {
   const [description, setDescription] = useState('');
   // Form state — V2 IA Taxonomy
   const [selectedCoreCategory, setSelectedCoreCategory] = useState('');
-  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [selectedSubSubcategory, setSelectedSubSubcategory] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [selectedOccasionTags, setSelectedOccasionTags] = useState<string[]>([]);
@@ -95,13 +113,18 @@ export function CreateProductPage() {
   const [selectedGiftTypes, setSelectedGiftTypes] = useState<string[]>([]);
   const [basePrice, setBasePrice] = useState('');
   const [discountPercentage, setDiscountPercentage] = useState('');
-  const [weight, setWeight] = useState('');
-  const [color, setColor] = useState('');
+  const [weightValue, setWeightValue] = useState('');
+  const [weightUnit, setWeightUnit] = useState<'g' | 'kg' | 'lb' | 'oz'>('g');
+  const [colors, setColors] = useState<string[]>([]);
+  const [colorInput, setColorInput] = useState('');
   const [materials, setMaterials] = useState<string[]>([]);
   const [materialInput, setMaterialInput] = useState('');
   const [keyInfo, setKeyInfo] = useState<KeyInfo[]>([{ label: '', value: '' }]);
+  const [productVariants, setProductVariants] = useState<{ name: string; options: string[]; valueInput: string }[]>([]);
   const [personalizationType, setPersonalizationType] = useState<PersonalizationType>('none');
+  const [selectedPersonalizationTypes, setSelectedPersonalizationTypes] = useState<string[]>([]);
   const [estimatedDeliveryDays, setEstimatedDeliveryDays] = useState('');
+  const [deliveryCustom, setDeliveryCustom] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isMadeInNigeria, setIsMadeInNigeria] = useState(false);
@@ -129,7 +152,7 @@ export function CreateProductPage() {
 
   // Cascading options derived from selections
   const subcategoryOptions = selectedCoreCategory ? SUBCATEGORIES_MAP[selectedCoreCategory] ?? [] : [];
-  const subSubcategoryOptions = selectedSubcategory ? SUB_SUBCATEGORIES_MAP[selectedSubcategory] ?? [] : [];
+  const subSubcategoryOptions = selectedSubcategories.length === 1 ? SUB_SUBCATEGORIES_MAP[selectedSubcategories[0]] ?? [] : [];
 
   const markStepTouched = (step: number) => {
     switch (step) {
@@ -180,15 +203,17 @@ export function CreateProductPage() {
       prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
     );
   };
-  // When core category changes, reset subcategory
+  // When core category changes, reset subcategories
   const handleCoreCategoryChange = (cat: string) => {
     setSelectedCoreCategory(cat);
-    setSelectedSubcategory('');
+    setSelectedSubcategories([]);
     setSelectedSubSubcategory('');
   };
 
-  const handleSubcategoryChange = (sub: string) => {
-    setSelectedSubcategory(sub);
+  const toggleSubcategory = (sub: string) => {
+    setSelectedSubcategories((prev) =>
+      prev.includes(sub) ? prev.filter((s) => s !== sub) : [...prev, sub]
+    );
     setSelectedSubSubcategory('');
   };
 
@@ -225,7 +250,7 @@ export function CreateProductPage() {
                 (subs as readonly string[]).includes(subcategoryKey)
               )?.[0] ?? '';
               setSelectedCoreCategory(coreCat);
-              setSelectedSubcategory(subcategoryKey);
+              setSelectedSubcategories([subcategoryKey]);
               setSelectedSubSubcategory(product.subcategory);
             } else {
               // It's a level-2 subcategory value
@@ -233,7 +258,11 @@ export function CreateProductPage() {
                 (subs as readonly string[]).includes(product.subcategory)
               )?.[0] ?? '';
               setSelectedCoreCategory(coreCat);
-              setSelectedSubcategory(product.subcategory);
+              setSelectedSubcategories(
+                (product as any).subcategories?.length
+                  ? (product as any).subcategories
+                  : product.subcategory ? [product.subcategory] : []
+              );
             }
           }
           // Legacy
@@ -241,12 +270,27 @@ export function CreateProductPage() {
           setSelectedGiftTypes(product.giftType || []);
           setBasePrice(product.basePrice?.toString() || '');
           setDiscountPercentage(product.discountPercentage?.toString() || '');
-          setWeight(product.weight || '');
-          setColor(product.color || '');
+          setWeightValue((product as any).weightValue?.toString() || '');
+          setWeightUnit((product as any).weightUnit || 'g');
+          setColors((product as any).colors?.length ? (product as any).colors : product.color ? [product.color] : []);
           setMaterials(product.materials || []);
           setKeyInfo(product.keyInfo?.length > 0 ? product.keyInfo : [{ label: '', value: '' }]);
+          setProductVariants(
+            (product.variants || []).map((v: any) => ({ name: v.name, options: v.options || [], valueInput: '' }))
+          );
           setPersonalizationType(product.personalizationType || 'none');
-          setEstimatedDeliveryDays(product.estimatedDeliveryDays?.toString() || '');
+          // Prefer new personalizationTypes array; fall back to legacy single field
+          const legacyMap: Record<string, string> = { engraving: 'Engraving', 'print-on': 'Print-on', sticker: 'Sticker' };
+          setSelectedPersonalizationTypes(
+            (product as any).personalizationTypes?.length > 0
+              ? (product as any).personalizationTypes.map((t: any) => t.name)
+              : product.personalizationType && product.personalizationType !== 'none'
+              ? [legacyMap[product.personalizationType] ?? product.personalizationType]
+              : []
+          );
+          const loadedDelivery = product.estimatedDeliveryDays?.toString() || '';
+          setEstimatedDeliveryDays(loadedDelivery);
+          setDeliveryCustom(!!loadedDelivery && !DELIVERY_PRESETS.some((p) => p.value === loadedDelivery));
           setIsBestSeller(product.isBestSeller || false);
           setIsFeatured(product.isFeatured || false);
           setIsMadeInNigeria(product.isMadeInNigeria || false);
@@ -337,15 +381,101 @@ export function CreateProductPage() {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    dragIndex.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (dropIndex: number) => {
+    if (dragIndex.current === null || dragIndex.current === dropIndex) {
+      dragIndex.current = null;
+      setDragOverIndex(null);
+      return;
+    }
+    const reordered = [...existingImages];
+    const [moved] = reordered.splice(dragIndex.current, 1);
+    reordered.splice(dropIndex, 0, moved);
+    setExistingImages(reordered.map((img, i) => ({ ...img, isMain: i === 0 })));
+    dragIndex.current = null;
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    dragIndex.current = null;
+    setDragOverIndex(null);
+  };
+
+  const handleNewDragStart = (e: React.DragEvent, index: number) => {
+    newDragIndex.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleNewDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setNewDragOverIndex(index);
+  };
+
+  const handleNewDrop = (dropIndex: number) => {
+    if (newDragIndex.current === null || newDragIndex.current === dropIndex) {
+      newDragIndex.current = null;
+      setNewDragOverIndex(null);
+      return;
+    }
+    const fromIndex = newDragIndex.current;
+    setImagePreviews((prev) => {
+      const arr = [...prev];
+      const [moved] = arr.splice(fromIndex, 1);
+      arr.splice(dropIndex, 0, moved);
+      return arr;
+    });
+    setImages((prev) => {
+      const arr = [...prev];
+      const [moved] = arr.splice(fromIndex, 1);
+      arr.splice(dropIndex, 0, moved);
+      return arr;
+    });
+    newDragIndex.current = null;
+    setNewDragOverIndex(null);
+  };
+
+  const handleNewDragEnd = () => {
+    newDragIndex.current = null;
+    setNewDragOverIndex(null);
+  };
+
   const addMaterial = () => {
-    if (materialInput.trim() && !materials.includes(materialInput.trim())) {
-      setMaterials((prev) => [...prev, materialInput.trim()]);
+    const entries = materialInput.split(',').map((m) => m.trim()).filter(Boolean);
+    const newOnes = entries.filter((e) => !materials.includes(e));
+    if (newOnes.length) {
+      setMaterials((prev) => [...prev, ...newOnes]);
       setMaterialInput('');
     }
   };
 
   const removeMaterial = (index: number) => {
     setMaterials((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addColor = () => {
+    const entries = colorInput.split(',').map((c) => c.trim()).filter(Boolean);
+    const newOnes = entries.filter((e) => !colors.includes(e));
+    if (newOnes.length) {
+      setColors((prev) => [...prev, ...newOnes]);
+      setColorInput('');
+    }
+  };
+
+  const removeColor = (index: number) => {
+    setColors((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addTag = () => {
@@ -402,7 +532,7 @@ export function CreateProductPage() {
     setDescription('');
     // V2 IA
     setSelectedCoreCategory('');
-    setSelectedSubcategory('');
+    setSelectedSubcategories([]);
     setSelectedSubSubcategory('');
     setSelectedRecipients([]);
     setSelectedOccasionTags([]);
@@ -412,13 +542,18 @@ export function CreateProductPage() {
     setSelectedGiftTypes([]);
     setBasePrice('');
     setDiscountPercentage('');
-    setWeight('');
-    setColor('');
+    setWeightValue('');
+    setWeightUnit('g');
+    setColors([]);
+    setColorInput('');
     setMaterials([]);
     setMaterialInput('');
     setKeyInfo([{ label: '', value: '' }]);
+    setProductVariants([]);
     setPersonalizationType('none');
+    setSelectedPersonalizationTypes([]);
     setEstimatedDeliveryDays('');
+    setDeliveryCustom(false);
     setIsBestSeller(false);
     setIsFeatured(false);
     setIsMadeInNigeria(false);
@@ -533,25 +668,34 @@ export function CreateProductPage() {
       if (selectedRecipients.length) formData.append('recipientTags', JSON.stringify(selectedRecipients));
       if (selectedOccasionTags.length) formData.append('occasionTags', JSON.stringify(selectedOccasionTags));
       if (selectedStyleTags.length) formData.append('styleTags', JSON.stringify(selectedStyleTags));
-      // Store the most specific level selected (sub-subcategory if chosen, else subcategory)
-      const subcategoryValue = selectedSubSubcategory || selectedSubcategory;
+      // Store primary subcategory + full list
+      const subcategoryValue = selectedSubSubcategory || selectedSubcategories[0] || '';
       if (subcategoryValue) formData.append('subcategory', subcategoryValue);
+      if (selectedSubcategories.length) formData.append('subcategories', JSON.stringify(selectedSubcategories));
       // Legacy (kept for backwards compat)
       if (selectedOccasions.length) formData.append('occasion', JSON.stringify(selectedOccasions));
       if (selectedGiftTypes.length) formData.append('giftType', JSON.stringify(selectedGiftTypes));
       formData.append('basePrice', basePrice);
       if (discountPercentage) formData.append('discountPercentage', discountPercentage);
-      if (weight) formData.append('weight', weight);
-      if (color) formData.append('color', color);
+      if (weightValue) {
+        formData.append('weightValue', weightValue);
+        formData.append('weightUnit', weightUnit);
+      }
+      if (colors.length) formData.append('colors', JSON.stringify(colors));
       if (materials.length) formData.append('materials', JSON.stringify(materials));
       if (keyInfo.length)
         formData.append('keyInfo', JSON.stringify(keyInfo.filter((k) => k.label && k.value)));
-      if (personalizationType && personalizationType !== 'none') {
-        formData.append('personalizationType', personalizationType);
-      }
+      const personalizationTypesPayload = selectedPersonalizationTypes.map((name) => {
+        const opt = PERSONALIZATION_CHIP_OPTIONS.find((o) => o.name === name);
+        return { name, extraDays: opt?.extraDays ?? 0 };
+      });
+      formData.append('personalizationTypes', JSON.stringify(personalizationTypesPayload));
+      const variantsPayload = productVariants
+        .filter((v) => v.name.trim() && v.options.length > 0)
+        .map((v) => ({ name: v.name.trim(), options: v.options, priceModifiers: {} }));
+      formData.append('variants', JSON.stringify(variantsPayload));
       if (estimatedDeliveryDays) formData.append('estimatedDeliveryDays', estimatedDeliveryDays);
-      formData.append('isBestSeller', String(isBestSeller));
-      formData.append('isFeatured', String(isFeatured));
+      // isBestSeller and isFeatured are admin-only — set via product management, not this form
       formData.append('isMadeInNigeria', String(isMadeInNigeria));
       formData.append('stock', stock || '0');
       formData.append('sku', sku);
@@ -572,6 +716,10 @@ export function CreateProductPage() {
       // Add images to delete for edit mode
       if (isEditMode && imagesToDelete.length > 0) {
         formData.append('deleteImages', JSON.stringify(imagesToDelete));
+      }
+      // Send reorder for existing images
+      if (isEditMode && existingImages.length > 0) {
+        formData.append('imageOrder', JSON.stringify(existingImages.map((img) => img.publicId)));
       }
 
       // Call appropriate API method
@@ -881,20 +1029,30 @@ export function CreateProductPage() {
                 <CardHeader>
                   <CardTitle>Product Images *</CardTitle>
                   <CardDescription>
-                    Upload up to 10 images. First image will be the main image.
+                    Upload up to 10 images. Drag to reorder — first image is the main image.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                     {existingImages.map((img, index) => (
                       <div
-                        key={`existing-${index}`}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-gray-200"
+                        key={`existing-${img.publicId}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDrop={() => handleDrop(index)}
+                        onDragEnd={handleDragEnd}
+                        className={`relative aspect-square rounded-lg overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all ${
+                          dragOverIndex === index
+                            ? 'border-orange-400 ring-2 ring-orange-200 scale-105'
+                            : 'border-gray-200'
+                        }`}
                       >
                         <img
                           src={img.url}
                           alt={`Existing ${index + 1}`}
-                          className="w-full h-full object-cover"
+                          draggable={false}
+                          className="w-full h-full object-cover pointer-events-none select-none"
                         />
                         <button
                           type="button"
@@ -906,7 +1064,7 @@ export function CreateProductPage() {
                         >
                           <X className="w-4 h-4" />
                         </button>
-                        {img.isMain && (
+                        {img.isMain && mainVideoIndex === null && (
                           <span
                             className="absolute bottom-1 left-1 text-xs text-white px-2 py-0.5 rounded"
                             style={{ backgroundColor: '#F6511E' }}
@@ -919,12 +1077,22 @@ export function CreateProductPage() {
                     {imagePreviews.map((preview, index) => (
                       <div
                         key={`new-${index}`}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-gray-200"
+                        draggable
+                        onDragStart={(e) => handleNewDragStart(e, index)}
+                        onDragOver={(e) => handleNewDragOver(e, index)}
+                        onDrop={() => handleNewDrop(index)}
+                        onDragEnd={handleNewDragEnd}
+                        className={`relative aspect-square rounded-lg overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all ${
+                          newDragOverIndex === index
+                            ? 'border-orange-400 ring-2 ring-orange-200 scale-105'
+                            : 'border-gray-200'
+                        }`}
                       >
                         <img
                           src={preview}
                           alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
+                          draggable={false}
+                          className="w-full h-full object-cover pointer-events-none select-none"
                         />
                         <button
                           type="button"
@@ -933,7 +1101,7 @@ export function CreateProductPage() {
                         >
                           <X className="w-4 h-4" />
                         </button>
-                        {!isEditMode && index === 0 && existingImages.length === 0 && (
+                        {!isEditMode && index === 0 && existingImages.length === 0 && mainVideoIndex === null && (
                           <span
                             className="absolute bottom-1 left-1 text-xs text-white px-2 py-0.5 rounded"
                             style={{ backgroundColor: '#F6511E' }}
@@ -1002,12 +1170,15 @@ export function CreateProductPage() {
                         </button>
                         <div className="absolute bottom-2 left-2 flex gap-2">
                           {mainVideoIndex === index ? (
-                            <span
-                              className="text-xs text-white px-2 py-1 rounded"
+                            <button
+                              type="button"
+                              onClick={() => setMainVideoIndex(null)}
+                              className="text-xs text-white px-2 py-1 rounded flex items-center gap-1"
                               style={{ backgroundColor: '#F6511E' }}
+                              title="Click to unset as main"
                             >
-                              Main Video
-                            </span>
+                              Main Video <X className="w-3 h-3" />
+                            </button>
                           ) : (
                             <button
                               type="button"
@@ -1079,20 +1250,29 @@ export function CreateProductPage() {
 
                     {subcategoryOptions.length > 0 && (
                       <div className="space-y-2">
-                        <Label htmlFor="subcategory">Subcategory</Label>
-                        <Select
-                          value={selectedSubcategory}
-                          onValueChange={handleSubcategoryChange}
-                        >
-                          <SelectTrigger id="subcategory" type="button">
-                            <SelectValue placeholder="Select a subcategory" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {subcategoryOptions.map((sub) => (
-                              <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label>
+                          Subcategory{' '}
+                          <span className="text-gray-500 font-normal text-xs">(select all that apply)</span>
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {subcategoryOptions.map((sub) => (
+                            <button
+                              key={sub}
+                              type="button"
+                              onClick={() => toggleSubcategory(sub)}
+                              className={cn(
+                                'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                                selectedSubcategories.includes(sub)
+                                  ? 'border-transparent text-white'
+                                  : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
+                              )}
+                              style={selectedSubcategories.includes(sub) ? { backgroundColor: '#F6511E' } : {}}
+                            >
+                              {selectedSubcategories.includes(sub) && <Check className="w-3 h-3 inline mr-1" />}
+                              {sub}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
 
@@ -1387,49 +1567,98 @@ export function CreateProductPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 min-h-[24px]">
-                        <Label htmlFor="weight">Weight</Label>
+                        <Label htmlFor="weightValue">Weight</Label>
                       </div>
-                      <Input
-                        id="weight"
-                        value={weight}
-                        onChange={(e) => setWeight(e.target.value)}
-                        placeholder="e.g., 250g"
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          id="weightValue"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={weightValue}
+                          onChange={(e) => setWeightValue(e.target.value)}
+                          placeholder="e.g. 250"
+                          className="flex-1"
+                        />
+                        <Select value={weightUnit} onValueChange={(v) => setWeightUnit(v as typeof weightUnit)}>
+                          <SelectTrigger className="w-20" type="button">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="g">g</SelectItem>
+                            <SelectItem value="kg">kg</SelectItem>
+                            <SelectItem value="lb">lb</SelectItem>
+                            <SelectItem value="oz">oz</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 min-h-[24px]">
-                        <Label htmlFor="color">Color</Label>
+                      <Label>Color(s)</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={colorInput}
+                          onChange={(e) => setColorInput(e.target.value)}
+                          placeholder="e.g. Red, Blue, Gold"
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }}
+                        />
+                        <Button type="button" variant="outline" onClick={addColor}>
+                          <Plus className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Input
-                        id="color"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        placeholder="e.g., Natural Brown"
-                      />
+                      {colors.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {colors.map((c, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
+                            >
+                              {c}
+                              <button
+                                type="button"
+                                onClick={() => removeColor(index)}
+                                className="text-gray-500 hover:text-red-500"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 min-h-[24px]">
-                        <Label htmlFor="estimatedDeliveryDays">Est. Delivery (days)</Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">
-                                Enter a single number or range (e.g., "5" or "3-5")
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                      </div>
-                      <Input
-                        id="estimatedDeliveryDays"
-                        value={estimatedDeliveryDays}
-                        onChange={(e) => setEstimatedDeliveryDays(e.target.value)}
-                        placeholder="e.g., 3-5 or 7"
-                        className={estimatedDeliveryDays && !/^\d+(-\d+)?$/.test(estimatedDeliveryDays.trim()) ? 'border-red-500' : ''}
-                      />
-                      {estimatedDeliveryDays && !/^\d+(-\d+)?$/.test(estimatedDeliveryDays.trim()) && (
-                        <p className="text-xs text-red-500 mt-1">Enter a number or range e.g. 3 or 3-5</p>
+                      <Label>Est. Delivery</Label>
+                      <Select
+                        value={deliveryCustom ? 'custom' : (estimatedDeliveryDays || '')}
+                        onValueChange={(val) => {
+                          if (val === 'custom') {
+                            setDeliveryCustom(true);
+                            setEstimatedDeliveryDays('');
+                          } else {
+                            setDeliveryCustom(false);
+                            setEstimatedDeliveryDays(val);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select delivery time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DELIVERY_PRESETS.map((p) => (
+                            <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                          ))}
+                          <SelectItem value="custom">Other (specify)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {deliveryCustom && (
+                        <>
+                          <Input
+                            value={estimatedDeliveryDays}
+                            onChange={(e) => setEstimatedDeliveryDays(e.target.value)}
+                            placeholder="e.g., Same day, On request, 14-21"
+                            className=""
+                          />
+                        </>
                       )}
                     </div>
                   </div>
@@ -1441,8 +1670,8 @@ export function CreateProductPage() {
                       <Input
                         value={materialInput}
                         onChange={(e) => setMaterialInput(e.target.value)}
-                        placeholder="Add a material"
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMaterial())}
+                        placeholder="e.g. Crystal, Glass, Metal"
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMaterial(); } }}
                       />
                       <Button type="button" variant="outline" onClick={addMaterial}>
                         <Plus className="w-4 h-4" />
@@ -1517,8 +1746,7 @@ export function CreateProductPage() {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="max-w-xs">
-                                Product specs like dimensions, weight, material details. E.g.,
-                                "Size: 10x15cm" or "Care: Hand wash only"
+                                These rows appear under "KEY INFO" on the buyer's product page. Add anything that helps them decide — e.g. Dimensions, Care Instructions, Country of Origin, Capacity, Allergens.
                               </p>
                             </TooltipContent>
                           </Tooltip>
@@ -1528,7 +1756,7 @@ export function CreateProductPage() {
                       </Button>
                     </div>
                     <p className="text-sm text-gray-500">
-                      Add product specifications that customers should know about.
+                      Shown on the buyer's product page. Add facts that help customers decide — e.g. Dimensions, Care Instructions, Country of Origin.
                     </p>
                     <div className="space-y-3">
                       {keyInfo.map((info, index) => (
@@ -1573,6 +1801,111 @@ export function CreateProductPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
+              {/* Variants */}
+              <Card className="border-0 shadow-sm mb-6">
+                <CardHeader>
+                  <CardTitle>Product Variants</CardTitle>
+                  <CardDescription>
+                    Options customers select before buying — e.g. Size, Colour, Material. Each variant is a label with selectable values.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {productVariants.map((variant, vIdx) => (
+                    <div key={vIdx} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Variant label (e.g. Shoe Size, Colour)"
+                          value={variant.name}
+                          onChange={(e) =>
+                            setProductVariants((prev) =>
+                              prev.map((v, i) => i === vIdx ? { ...v, name: e.target.value } : v)
+                            )
+                          }
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setProductVariants((prev) => prev.filter((_, i) => i !== vIdx))}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add a value (e.g. UK 6) then press Enter"
+                          value={variant.valueInput}
+                          onChange={(e) =>
+                            setProductVariants((prev) =>
+                              prev.map((v, i) => i === vIdx ? { ...v, valueInput: e.target.value } : v)
+                            )
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const entries = variant.valueInput.split(',').map((s) => s.trim()).filter(Boolean);
+                              const newOnes = entries.filter((en) => !variant.options.includes(en));
+                              if (newOnes.length) {
+                                setProductVariants((prev) =>
+                                  prev.map((v, i) => i === vIdx ? { ...v, options: [...v.options, ...newOnes], valueInput: '' } : v)
+                                );
+                              }
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const entries = variant.valueInput.split(',').map((s) => s.trim()).filter(Boolean);
+                            const newOnes = entries.filter((en) => !variant.options.includes(en));
+                            if (newOnes.length) {
+                              setProductVariants((prev) =>
+                                prev.map((v, i) => i === vIdx ? { ...v, options: [...v.options, ...newOnes], valueInput: '' } : v)
+                              );
+                            }
+                          }}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {variant.options.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {variant.options.map((opt, oIdx) => (
+                            <span
+                              key={oIdx}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
+                            >
+                              {opt}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setProductVariants((prev) =>
+                                    prev.map((v, i) => i === vIdx ? { ...v, options: v.options.filter((_, oi) => oi !== oIdx) } : v)
+                                  )
+                                }
+                                className="text-gray-500 hover:text-red-500"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setProductVariants((prev) => [...prev, { name: '', options: [], valueInput: '' }])}
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Add Variant
+                  </Button>
+                </CardContent>
+              </Card>
+
               <Card className="border-0 shadow-sm">
                 <CardHeader>
                   <CardTitle>Personalization</CardTitle>
@@ -1581,29 +1914,36 @@ export function CreateProductPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="personalizationType">Type of Personalization</Label>
-                    <Select
-                      value={personalizationType}
-                      onValueChange={(value) =>
-                        setPersonalizationType(value as PersonalizationType)
-                      }
-                    >
-                      <SelectTrigger type="button">
-                        <SelectValue placeholder="Select personalization type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PERSONALIZATION_TYPE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-3">
+                    <Label>Personalization Types</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {PERSONALIZATION_CHIP_OPTIONS.map((opt) => {
+                        const active = selectedPersonalizationTypes.includes(opt.name);
+                        return (
+                          <button
+                            key={opt.name}
+                            type="button"
+                            onClick={() =>
+                              setSelectedPersonalizationTypes((prev) =>
+                                active ? prev.filter((n) => n !== opt.name) : [...prev, opt.name]
+                              )
+                            }
+                            className="px-4 py-2 rounded-full text-sm font-medium border transition-colors"
+                            style={
+                              active
+                                ? { backgroundColor: '#F6511E', color: '#fff', borderColor: '#F6511E' }
+                                : { backgroundColor: '#fff', color: '#374151', borderColor: '#d1d5db' }
+                            }
+                          >
+                            {opt.name}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <p className="text-sm text-gray-500">
-                      {personalizationType === 'none'
-                        ? 'This product does not offer personalization'
-                        : `Customers can request ${PERSONALIZATION_TYPE_OPTIONS.find((o) => o.value === personalizationType)?.label.toLowerCase()} for this product`}
+                      {selectedPersonalizationTypes.length === 0
+                        ? 'No personalisation offered — select at least one type to enable it'
+                        : `Customers can request: ${selectedPersonalizationTypes.join(', ')}`}
                     </p>
                   </div>
                 </CardContent>
@@ -1612,22 +1952,12 @@ export function CreateProductPage() {
               <Card className="border-0 shadow-sm">
                 <CardHeader>
                   <CardTitle>Product Badges</CardTitle>
-                  <CardDescription>Highlight special features of this product</CardDescription>
+                  <CardDescription>Vendor-applied badge for this product. Best Seller and Featured are assigned by admin.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-wrap gap-6">
-                    <div className="flex items-center gap-2">
-                      <Switch type="button" checked={isBestSeller} onCheckedChange={setIsBestSeller} />
-                      <Label>Best Seller</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch type="button" checked={isFeatured} onCheckedChange={setIsFeatured} />
-                      <Label>Featured</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch type="button" checked={isMadeInNigeria} onCheckedChange={setIsMadeInNigeria} />
-                      <Label>Made in Nigeria 🇳🇬</Label>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Switch type="button" checked={isMadeInNigeria} onCheckedChange={setIsMadeInNigeria} />
+                    <Label>Made in Nigeria 🇳🇬</Label>
                   </div>
                 </CardContent>
               </Card>
