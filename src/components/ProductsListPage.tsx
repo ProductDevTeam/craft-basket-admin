@@ -78,6 +78,12 @@ interface Product {
     url: string;
     isMain: boolean;
   }>;
+  videos?: Array<{
+    url: string;
+    publicId: string;
+    thumbnail?: string;
+    isMain: boolean;
+  }>;
   stock: number;
   isActive: boolean;
   isFeatured: boolean;
@@ -240,6 +246,8 @@ export function ProductsListPage() {
   };
 
   const mainImage = (product: Product) => {
+    const mainVideo = product.videos?.find((v) => v.isMain && v.thumbnail);
+    if (mainVideo) return mainVideo.thumbnail!;
     const main = product.images.find((img) => img.isMain);
     return main?.url || product.images[0]?.url || '/placeholder-product.png';
   };

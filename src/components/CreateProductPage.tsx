@@ -135,6 +135,9 @@ export function CreateProductPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videos, setVideos] = useState<File[]>([]);
   const [mainVideoIndex, setMainVideoIndex] = useState<number | null>(null);
+  const [existingVideos, setExistingVideos] = useState<Array<{ url: string; publicId: string; thumbnail?: string; isMain: boolean }>>([]);
+  const [videosToDelete, setVideosToDelete] = useState<string[]>([]);
+  const [existingMainVideoPublicId, setExistingMainVideoPublicId] = useState<string | null>(null);
 
   // Calculate discounted price live preview
   const discountedPrice = useMemo(() => {
@@ -298,6 +301,11 @@ export function CreateProductPage() {
           setSku(product.sku || '');
           setTags(product.tags || []);
           setExistingImages(product.images || []);
+          const existingVids: Array<{ url: string; publicId: string; thumbnail?: string; isMain: boolean }> =
+            (product as any).videos || [];
+          setExistingVideos(existingVids);
+          const mainVid = existingVids.find((v) => v.isMain);
+          if (mainVid) setExistingMainVideoPublicId(mainVid.publicId);
         }
       }
     } catch (error) {
@@ -505,7 +513,7 @@ export function CreateProductPage() {
     const files = Array.from(e.target.files || []);
     const videoFiles = files.filter((file) => file.type.startsWith('video/'));
 
-    if (videoFiles.length + videos.length > 3) {
+    if (videoFiles.length + videos.length + existingVideos.length > 3) {
       toast.error('Maximum 3 videos allowed');
       return;
     }
@@ -524,6 +532,18 @@ export function CreateProductPage() {
 
   const setVideoAsMain = (index: number) => {
     setMainVideoIndex(index);
+    setExistingMainVideoPublicId(null);
+  };
+
+  const removeExistingVideo = (publicId: string) => {
+    setVideosToDelete((prev) => [...prev, publicId]);
+    setExistingVideos((prev) => prev.filter((v) => v.publicId !== publicId));
+    if (existingMainVideoPublicId === publicId) setExistingMainVideoPublicId(null);
+  };
+
+  const setExistingVideoAsMain = (publicId: string) => {
+    setExistingMainVideoPublicId(publicId);
+    setMainVideoIndex(null);
   };
 
   const resetForm = () => {
@@ -565,6 +585,9 @@ export function CreateProductPage() {
     setImagePreviews([]);
     setVideos([]);
     setMainVideoIndex(null);
+    setExistingVideos([]);
+    setVideosToDelete([]);
+    setExistingMainVideoPublicId(null);
     setCurrentStep(1);
   };
 
@@ -720,6 +743,13 @@ export function CreateProductPage() {
       // Send reorder for existing images
       if (isEditMode && existingImages.length > 0) {
         formData.append('imageOrder', JSON.stringify(existingImages.map((img) => img.publicId)));
+      }
+      // Videos to delete + which existing video is main
+      if (isEditMode && videosToDelete.length > 0) {
+        formData.append('deleteVideos', JSON.stringify(videosToDelete));
+      }
+      if (existingMainVideoPublicId) {
+        formData.append('existingMainVideoPublicId', existingMainVideoPublicId);
       }
 
       // Call appropriate API method
@@ -1151,6 +1181,51 @@ export function CreateProductPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* Existing uploaded videos (edit mode) */}
+                    {existingVideos.map((video) => (
+                      <div
+                        key={video.publicId}
+                        className="relative aspect-video rounded-lg overflow-hidden border border-gray-200 bg-gray-100"
+                      >
+                        {video.thumbnail ? (
+                          <img src={video.thumbnail} alt="Video thumbnail" className="w-full h-full object-cover" />
+                        ) : (
+                          <video src={video.url} className="w-full h-full object-cover" controls />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeExistingVideo(video.publicId)}
+                          className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-2 left-2 flex gap-2">
+                          {existingMainVideoPublicId === video.publicId ? (
+                            <button
+                              type="button"
+                              onClick={() => setExistingMainVideoPublicId(null)}
+                              className="text-xs text-white px-2 py-1 rounded flex items-center gap-1"
+                              style={{ backgroundColor: '#F6511E' }}
+                              title="Click to unset as main"
+                            >
+                              Main Video <X className="w-3 h-3" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setExistingVideoAsMain(video.publicId)}
+                              className="text-xs text-white px-2 py-1 rounded bg-gray-700 hover:bg-gray-600"
+                            >
+                              Set as Main
+                            </button>
+                          )}
+                        </div>
+                        <div className="absolute top-2 left-2 text-xs text-white px-2 py-0.5 rounded bg-black/50">
+                          Uploaded
+                        </div>
+                      </div>
+                    ))}
+                    {/* New videos staged for upload */}
                     {videos.map((video, index) => (
                       <div
                         key={index}
@@ -1194,7 +1269,7 @@ export function CreateProductPage() {
                         </div>
                       </div>
                     ))}
-                    {videos.length < 3 && (
+                    {videos.length + existingVideos.length < 3 && (
                       <label className="aspect-video rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-[#F6511E] transition-colors">
                         <Upload className="w-8 h-8 text-gray-400" />
                         <span className="text-sm text-gray-500 mt-2">Upload Video</span>
