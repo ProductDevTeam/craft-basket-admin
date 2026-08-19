@@ -53,26 +53,37 @@ import {
   CommandList,
 } from '@/components/ui/command';
 
-const PERSONALIZATION_CHIP_OPTIONS = [
-  { name: 'Engraving', extraDays: 2 },
-  { name: 'Print-on', extraDays: 0 },
-  { name: 'Sticker', extraDays: 0 },
-];
+const PERSONALIZATION_CHIP_OPTIONS = ['Engraving', 'Print-on', 'Sticker'];
 
-const DELIVERY_PRESETS = [
-  { value: '1-2', label: '1-2 business days' },
-  { value: '3-5', label: '3-5 business days' },
-  { value: '5-7', label: '5-7 business days' },
-  { value: '7-10', label: '7-10 business days' },
-  { value: '10-14', label: '10-14 business days' },
+const VARIANT_LABEL_PRESETS = ['Size', 'Color', 'Material', 'Length'];
+
+const VARIANT_PLACEHOLDER_MAP: Record<string, string> = {
+  Size: 'e.g. Small, Medium, Large',
+  Length: 'e.g. Small, Medium, Large',
+  Color: 'e.g. Gold, Silver, Rose Gold',
+  Material: 'e.g. Cotton, Wool, Silk',
+};
+
+const KEY_INFO_LABEL_PRESETS = [
+  'Dimensions',
+  'Care Instructions',
+  'Country of Origin',
+  "What's Included",
+  'Shelf Life',
+  'Allergen Information',
+  'Battery Type',
+  'Warranty',
+  'Age Recommendation',
+  'Assembly Required',
 ];
 
 const STEPS = [
   { id: 1, name: 'Product Details', description: 'Name, description & media' },
   { id: 2, name: 'Category', description: 'Category, tags & audience' },
   { id: 3, name: 'Pricing', description: 'Price & inventory' },
-  { id: 4, name: 'Additional Details', description: 'Style, specs & info' },
-  { id: 5, name: 'Customization', description: 'Options & badges' },
+  { id: 4, name: 'Variants', description: 'Options & pricing' },
+  { id: 5, name: 'Personalization', description: 'Lead time & options' },
+  { id: 6, name: 'Details & Badges', description: 'Specs & badges' },
 ];
 
 export function CreateProductPage() {
@@ -115,16 +126,23 @@ export function CreateProductPage() {
   const [discountPercentage, setDiscountPercentage] = useState('');
   const [weightValue, setWeightValue] = useState('');
   const [weightUnit, setWeightUnit] = useState<'g' | 'kg' | 'lb' | 'oz'>('g');
-  const [colors, setColors] = useState<string[]>([]);
-  const [colorInput, setColorInput] = useState('');
   const [materials, setMaterials] = useState<string[]>([]);
   const [materialInput, setMaterialInput] = useState('');
   const [keyInfo, setKeyInfo] = useState<KeyInfo[]>([{ label: '', value: '' }]);
-  const [productVariants, setProductVariants] = useState<{ name: string; options: string[]; valueInput: string }[]>([]);
+  const [productVariants, setProductVariants] = useState<{
+    name: string;
+    options: string[];
+    valueInput: string;
+    labelOpen: boolean;
+    priceOverrides: Record<string, string>;
+    stockOverrides: Record<string, string>;
+  }[]>([]);
   const [personalizationType, setPersonalizationType] = useState<PersonalizationType>('none');
+  const [isPersonalizable, setIsPersonalizable] = useState(false);
   const [selectedPersonalizationTypes, setSelectedPersonalizationTypes] = useState<string[]>([]);
+  const [personalizationLeadTimes, setPersonalizationLeadTimes] = useState<Record<string, number>>({});
   const [estimatedDeliveryDays, setEstimatedDeliveryDays] = useState('');
-  const [deliveryCustom, setDeliveryCustom] = useState(false);
+  const [keyInfoCustom, setKeyInfoCustom] = useState<boolean[]>([false]);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isMadeInNigeria, setIsMadeInNigeria] = useState(false);
@@ -206,6 +224,64 @@ export function CreateProductPage() {
       prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
     );
   };
+
+  const handlePersonalizableToggle = (checked: boolean) => {
+    setIsPersonalizable(checked);
+    if (!checked) {
+      setSelectedPersonalizationTypes([]);
+      setPersonalizationLeadTimes({});
+    }
+  };
+
+  const togglePersonalizationType = (typeName: string) => {
+    setSelectedPersonalizationTypes((prev) => {
+      if (prev.includes(typeName)) {
+        setPersonalizationLeadTimes((lt) => {
+          const copy = { ...lt };
+          delete copy[typeName];
+          return copy;
+        });
+        return prev.filter((n) => n !== typeName);
+      } else {
+        setPersonalizationLeadTimes((lt) => ({ ...lt, [typeName]: 0 }));
+        return [...prev, typeName];
+      }
+    });
+  };
+
+  const addVariantOption = (idx: number, rawInput: string) => {
+    const entries = rawInput.split(',').map((s) => s.trim()).filter(Boolean);
+    const variant = productVariants[idx];
+    const newOnes = entries.filter((e) => !variant.options.includes(e));
+    if (!newOnes.length) return;
+    const newPriceOverrides = { ...variant.priceOverrides };
+    const newStockOverrides = { ...variant.stockOverrides };
+    newOnes.forEach((opt) => {
+      newPriceOverrides[opt] = basePrice;
+      newStockOverrides[opt] = stock;
+    });
+    setProductVariants((prev) =>
+      prev.map((v, i) =>
+        i === idx
+          ? { ...v, options: [...v.options, ...newOnes], priceOverrides: newPriceOverrides, stockOverrides: newStockOverrides, valueInput: '' }
+          : v
+      )
+    );
+  };
+
+  const removeVariantOption = (idx: number, optIdx: number) => {
+    const opt = productVariants[idx].options[optIdx];
+    setProductVariants((prev) =>
+      prev.map((v, i) => {
+        if (i !== idx) return v;
+        const newPrice = { ...v.priceOverrides };
+        const newStock = { ...v.stockOverrides };
+        delete newPrice[opt];
+        delete newStock[opt];
+        return { ...v, options: v.options.filter((_, oi) => oi !== optIdx), priceOverrides: newPrice, stockOverrides: newStock };
+      })
+    );
+  };
   // When core category changes, reset subcategories
   const handleCoreCategoryChange = (cat: string) => {
     setSelectedCoreCategory(cat);
@@ -275,25 +351,34 @@ export function CreateProductPage() {
           setDiscountPercentage(product.discountPercentage?.toString() || '');
           setWeightValue((product as any).weightValue?.toString() || '');
           setWeightUnit((product as any).weightUnit || 'g');
-          setColors((product as any).colors?.length ? (product as any).colors : product.color ? [product.color] : []);
           setMaterials(product.materials || []);
-          setKeyInfo(product.keyInfo?.length > 0 ? product.keyInfo : [{ label: '', value: '' }]);
+          const loadedKeyInfo = product.keyInfo?.length > 0 ? product.keyInfo : [{ label: '', value: '' }];
+          setKeyInfo(loadedKeyInfo);
+          setKeyInfoCustom(loadedKeyInfo.map((k: any) => k.label !== '' && !KEY_INFO_LABEL_PRESETS.includes(k.label)));
           setProductVariants(
-            (product.variants || []).map((v: any) => ({ name: v.name, options: v.options || [], valueInput: '' }))
+            (product.variants || []).map((v: any) => ({
+              name: v.name,
+              options: v.options || [],
+              valueInput: '',
+              labelOpen: false,
+              priceOverrides: Object.fromEntries((v.options || []).map((o: string) => [o, product.basePrice?.toString() || ''])),
+              stockOverrides: Object.fromEntries((v.options || []).map((o: string) => [o, product.stock?.toString() || '0'])),
+            }))
           );
           setPersonalizationType(product.personalizationType || 'none');
-          // Prefer new personalizationTypes array; fall back to legacy single field
           const legacyMap: Record<string, string> = { engraving: 'Engraving', 'print-on': 'Print-on', sticker: 'Sticker' };
-          setSelectedPersonalizationTypes(
+          const personalizationTypesArr: { name: string; extraDays: number }[] =
             (product as any).personalizationTypes?.length > 0
-              ? (product as any).personalizationTypes.map((t: any) => t.name)
+              ? (product as any).personalizationTypes
               : product.personalizationType && product.personalizationType !== 'none'
-              ? [legacyMap[product.personalizationType] ?? product.personalizationType]
-              : []
-          );
-          const loadedDelivery = product.estimatedDeliveryDays?.toString() || '';
-          setEstimatedDeliveryDays(loadedDelivery);
-          setDeliveryCustom(!!loadedDelivery && !DELIVERY_PRESETS.some((p) => p.value === loadedDelivery));
+              ? [{ name: legacyMap[product.personalizationType] ?? product.personalizationType, extraDays: 0 }]
+              : [];
+          setSelectedPersonalizationTypes(personalizationTypesArr.map((t) => t.name));
+          setIsPersonalizable(personalizationTypesArr.length > 0);
+          const loadedLeadTimes: Record<string, number> = {};
+          personalizationTypesArr.forEach((t) => { loadedLeadTimes[t.name] = t.extraDays ?? 0; });
+          setPersonalizationLeadTimes(loadedLeadTimes);
+          setEstimatedDeliveryDays(product.estimatedDeliveryDays?.toString() || '');
           setIsBestSeller(product.isBestSeller || false);
           setIsFeatured(product.isFeatured || false);
           setIsMadeInNigeria(product.isMadeInNigeria || false);
@@ -473,18 +558,6 @@ export function CreateProductPage() {
     setMaterials((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const addColor = () => {
-    const entries = colorInput.split(',').map((c) => c.trim()).filter(Boolean);
-    const newOnes = entries.filter((e) => !colors.includes(e));
-    if (newOnes.length) {
-      setColors((prev) => [...prev, ...newOnes]);
-      setColorInput('');
-    }
-  };
-
-  const removeColor = (index: number) => {
-    setColors((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -499,6 +572,7 @@ export function CreateProductPage() {
 
   const addKeyInfo = () => {
     setKeyInfo((prev) => [...prev, { label: '', value: '' }]);
+    setKeyInfoCustom((prev) => [...prev, false]);
   };
 
   const updateKeyInfo = (index: number, field: 'label' | 'value', value: string) => {
@@ -507,6 +581,7 @@ export function CreateProductPage() {
 
   const removeKeyInfo = (index: number) => {
     setKeyInfo((prev) => prev.filter((_, i) => i !== index));
+    setKeyInfoCustom((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -564,16 +639,16 @@ export function CreateProductPage() {
     setDiscountPercentage('');
     setWeightValue('');
     setWeightUnit('g');
-    setColors([]);
-    setColorInput('');
     setMaterials([]);
     setMaterialInput('');
     setKeyInfo([{ label: '', value: '' }]);
+    setKeyInfoCustom([false]);
     setProductVariants([]);
     setPersonalizationType('none');
+    setIsPersonalizable(false);
     setSelectedPersonalizationTypes([]);
+    setPersonalizationLeadTimes({});
     setEstimatedDeliveryDays('');
-    setDeliveryCustom(false);
     setIsBestSeller(false);
     setIsFeatured(false);
     setIsMadeInNigeria(false);
@@ -642,6 +717,15 @@ export function CreateProductPage() {
           return false;
         }
         return true;
+      case 4:
+        return true;
+      case 5:
+        if (!estimatedDeliveryDays || estimatedDeliveryDays.trim() === '') {
+          setTouched((prev) => ({ ...prev, estimatedDeliveryDays: true }));
+          toast.error('Please enter the estimated delivery time in days');
+          return false;
+        }
+        return true;
       default:
         return true;
     }
@@ -704,18 +788,22 @@ export function CreateProductPage() {
         formData.append('weightValue', weightValue);
         formData.append('weightUnit', weightUnit);
       }
-      if (colors.length) formData.append('colors', JSON.stringify(colors));
       if (materials.length) formData.append('materials', JSON.stringify(materials));
       if (keyInfo.length)
         formData.append('keyInfo', JSON.stringify(keyInfo.filter((k) => k.label && k.value)));
-      const personalizationTypesPayload = selectedPersonalizationTypes.map((name) => {
-        const opt = PERSONALIZATION_CHIP_OPTIONS.find((o) => o.name === name);
-        return { name, extraDays: opt?.extraDays ?? 0 };
-      });
+      const personalizationTypesPayload = selectedPersonalizationTypes.map((name) => ({
+        name,
+        extraDays: personalizationLeadTimes[name] ?? 0,
+      }));
       formData.append('personalizationTypes', JSON.stringify(personalizationTypesPayload));
       const variantsPayload = productVariants
         .filter((v) => v.name.trim() && v.options.length > 0)
-        .map((v) => ({ name: v.name.trim(), options: v.options, priceModifiers: {} }));
+        .map((v) => ({
+          name: v.name.trim(),
+          options: v.options,
+          priceModifiers: v.priceOverrides,
+          stockModifiers: v.stockOverrides,
+        }));
       formData.append('variants', JSON.stringify(variantsPayload));
       if (estimatedDeliveryDays) formData.append('estimatedDeliveryDays', estimatedDeliveryDays);
       // isBestSeller and isFeatured are admin-only — set via product management, not this form
@@ -1325,29 +1413,23 @@ export function CreateProductPage() {
 
                     {subcategoryOptions.length > 0 && (
                       <div className="space-y-2">
-                        <Label>
-                          Subcategory{' '}
-                          <span className="text-gray-500 font-normal text-xs">(select all that apply)</span>
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {subcategoryOptions.map((sub) => (
-                            <button
-                              key={sub}
-                              type="button"
-                              onClick={() => toggleSubcategory(sub)}
-                              className={cn(
-                                'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                                selectedSubcategories.includes(sub)
-                                  ? 'border-transparent text-white'
-                                  : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
-                              )}
-                              style={selectedSubcategories.includes(sub) ? { backgroundColor: '#F6511E' } : {}}
-                            >
-                              {selectedSubcategories.includes(sub) && <Check className="w-3 h-3 inline mr-1" />}
-                              {sub}
-                            </button>
-                          ))}
-                        </div>
+                        <Label htmlFor="subcategory">Subcategory</Label>
+                        <Select
+                          value={selectedSubcategories[0] || ''}
+                          onValueChange={(val) => {
+                            setSelectedSubcategories(val ? [val] : []);
+                            setSelectedSubSubcategory('');
+                          }}
+                        >
+                          <SelectTrigger id="subcategory" type="button">
+                            <SelectValue placeholder="Select a subcategory" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subcategoryOptions.map((sub) => (
+                              <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 
@@ -1440,6 +1522,36 @@ export function CreateProductPage() {
                             <Check className="w-3 h-3 inline mr-1" />
                           )}
                           {occasion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <hr className="border-gray-200" />
+
+                  {/* ── Style / Vibe Tags ─────────────────────────────────── */}
+                  <div className="space-y-2">
+                    <Label>
+                      Style / Vibe Tags{' '}
+                      <span className="text-gray-500 font-normal">(Optional)</span>
+                    </Label>
+                    <p className="text-xs text-gray-500">Helps customers filter by mood and style.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {STYLE_TAG_OPTIONS.map((style) => (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => toggleStyleTag(style)}
+                          className={cn(
+                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                            selectedStyleTags.includes(style)
+                              ? 'border-transparent text-white'
+                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
+                          )}
+                          style={selectedStyleTags.includes(style) ? { backgroundColor: '#F6511E' } : {}}
+                        >
+                          {selectedStyleTags.includes(style) && <Check className="w-3 h-3 inline mr-1" />}
+                          {style}
                         </button>
                       ))}
                     </div>
@@ -1590,7 +1702,7 @@ export function CreateProductPage() {
             </motion.div>
           )}
 
-          {/* Step 4: Additional Details */}
+          {/* Step 4: Product Variants */}
           {currentStep === 4 && (
             <motion.div
               key="step-4"
@@ -1601,273 +1713,208 @@ export function CreateProductPage() {
             >
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Additional Details</CardTitle>
-                  <CardDescription>Style tags, specs and product information</CardDescription>
+                  <CardTitle>Product Variants</CardTitle>
+                  <CardDescription>Options customers choose before buying — e.g. Size, Color, Material.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-
-                  {/* ── Style Tags ────────────────────────────────────────── */}
-                  <div className="space-y-2">
-                    <Label>
-                      Style / Vibe Tags{' '}
-                      <span className="text-gray-500 font-normal">(Optional)</span>
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {STYLE_TAG_OPTIONS.map((style) => (
-                        <button
-                          key={style}
-                          type="button"
-                          onClick={() => toggleStyleTag(style)}
-                          className={cn(
-                            'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                            selectedStyleTags.includes(style)
-                              ? 'border-transparent text-white'
-                              : 'border-gray-300 text-gray-700 bg-white hover:border-[#F6511E]'
-                          )}
-                          style={
-                            selectedStyleTags.includes(style)
-                              ? { backgroundColor: '#F6511E' }
-                              : {}
-                          }
-                        >
-                          {selectedStyleTags.includes(style) && (
-                            <Check className="w-3 h-3 inline mr-1" />
-                          )}
-                          {style}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 min-h-[24px]">
-                        <Label htmlFor="weightValue">Weight</Label>
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          id="weightValue"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={weightValue}
-                          onChange={(e) => setWeightValue(e.target.value)}
-                          placeholder="e.g. 250"
-                          className="flex-1"
-                        />
-                        <Select value={weightUnit} onValueChange={(v) => setWeightUnit(v as typeof weightUnit)}>
-                          <SelectTrigger className="w-20" type="button">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="g">g</SelectItem>
-                            <SelectItem value="kg">kg</SelectItem>
-                            <SelectItem value="lb">lb</SelectItem>
-                            <SelectItem value="oz">oz</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Color(s)</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={colorInput}
-                          onChange={(e) => setColorInput(e.target.value)}
-                          placeholder="e.g. Red, Blue, Gold"
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColor(); } }}
-                        />
-                        <Button type="button" variant="outline" onClick={addColor}>
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      {colors.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {colors.map((c, index) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
-                            >
-                              {c}
-                              <button
-                                type="button"
-                                onClick={() => removeColor(index)}
-                                className="text-gray-500 hover:text-red-500"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Est. Delivery</Label>
-                      <Select
-                        value={deliveryCustom ? 'custom' : (estimatedDeliveryDays || '')}
-                        onValueChange={(val) => {
-                          if (val === 'custom') {
-                            setDeliveryCustom(true);
-                            setEstimatedDeliveryDays('');
-                          } else {
-                            setDeliveryCustom(false);
-                            setEstimatedDeliveryDays(val);
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select delivery time" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DELIVERY_PRESETS.map((p) => (
-                            <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                          ))}
-                          <SelectItem value="custom">Other (specify)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {deliveryCustom && (
-                        <>
-                          <Input
-                            value={estimatedDeliveryDays}
-                            onChange={(e) => setEstimatedDeliveryDays(e.target.value)}
-                            placeholder="e.g., Same day, On request, 14-21"
-                            className=""
-                          />
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Materials */}
-                  <div className="space-y-2">
-                    <Label>Materials</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={materialInput}
-                        onChange={(e) => setMaterialInput(e.target.value)}
-                        placeholder="e.g. Crystal, Glass, Metal"
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMaterial(); } }}
-                      />
-                      <Button type="button" variant="outline" onClick={addMaterial}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {materials.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {materials.map((material, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
-                          >
-                            {material}
-                            <button
-                              type="button"
-                              onClick={() => removeMaterial(index)}
-                              className="text-gray-500 hover:text-red-500"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tags */}
-                  <div className="space-y-2">
-                    <Label>Tags</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        placeholder="Add a tag"
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                      />
-                      <Button type="button" variant="outline" onClick={addTag}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {tags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm"
-                            style={{ backgroundColor: '#fef3e7', color: '#F6511E' }}
-                          >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => removeTag(index)}
-                              className="hover:text-red-500"
-                              style={{ color: '#F6511E' }}
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Key Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Label>Key Information</Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">
-                                These rows appear under "KEY INFO" on the buyer's product page. Add anything that helps them decide — e.g. Dimensions, Care Instructions, Country of Origin, Capacity, Allergens.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                      </div>
-                      <Button type="button" variant="outline" size="sm" onClick={addKeyInfo}>
-                        <Plus className="w-4 h-4 mr-1" /> Add More
-                      </Button>
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      Shown on the buyer's product page. Add facts that help customers decide — e.g. Dimensions, Care Instructions, Country of Origin.
-                    </p>
-                    <div className="space-y-3">
-                      {keyInfo.map((info, index) => (
-                        <div key={index} className="flex gap-2 items-start">
-                          <Input
-                            placeholder="Label (e.g., Dimensions)"
-                            value={info.label}
-                            onChange={(e) => updateKeyInfo(index, 'label', e.target.value)}
-                            className="flex-1"
-                          />
-                          <Input
-                            placeholder="Value (e.g., 10cm x 15cm)"
-                            value={info.value}
-                            onChange={(e) => updateKeyInfo(index, 'value', e.target.value)}
-                            className="flex-1"
-                          />
-                          <Button
+                  {productVariants.length === 0 && (
+                    <p className="text-sm text-gray-500">No variants added. Click below to add one.</p>
+                  )}
+                  {productVariants.map((variant, vIdx) => (
+                    <div key={vIdx} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                      {/* Variant label row */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Variant label</Label>
+                          <button
                             type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeKeyInfo(index)}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            disabled={keyInfo.length === 1}
+                            onClick={() => setProductVariants((prev) => prev.filter((_, i) => i !== vIdx))}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
                           >
                             <X className="w-4 h-4" />
-                          </Button>
+                          </button>
                         </div>
-                      ))}
+                        {/* Combobox for label */}
+                        <Popover
+                          open={variant.labelOpen}
+                          onOpenChange={(open) =>
+                            setProductVariants((prev) =>
+                              prev.map((v, i) => (i === vIdx ? { ...v, labelOpen: open } : v))
+                            )
+                          }
+                        >
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                'w-full text-left px-3 py-2 border rounded-md flex items-center justify-between text-sm transition-colors hover:border-[#F6511E]',
+                                !variant.name && 'text-muted-foreground'
+                              )}
+                            >
+                              <span>{variant.name || 'Choose or type a label (e.g. Size, Color)'}</span>
+                              <ChevronsUpDown className="w-4 h-4 text-gray-400 shrink-0" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                            <Command>
+                              <CommandInput
+                                placeholder="Type a label..."
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const val = (e.target as HTMLInputElement).value.trim();
+                                    if (val) {
+                                      setProductVariants((prev) =>
+                                        prev.map((v, i) => (i === vIdx ? { ...v, name: val, labelOpen: false } : v))
+                                      );
+                                    }
+                                  }
+                                }}
+                              />
+                              <CommandList>
+                                <CommandEmpty>Press Enter to use this label</CommandEmpty>
+                                <CommandGroup>
+                                  {VARIANT_LABEL_PRESETS.map((preset) => (
+                                    <CommandItem
+                                      key={preset}
+                                      value={preset}
+                                      onSelect={() =>
+                                        setProductVariants((prev) =>
+                                          prev.map((v, i) => (i === vIdx ? { ...v, name: preset, labelOpen: false } : v))
+                                        )
+                                      }
+                                    >
+                                      <Check className={cn('mr-2 h-4 w-4', variant.name === preset ? 'opacity-100' : 'opacity-0')} />
+                                      {preset}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {/* Values field */}
+                      <div className="space-y-1">
+                        <Label className="text-sm font-medium">Values</Label>
+                        <Input
+                          disabled={!variant.name}
+                          placeholder={variant.name ? (VARIANT_PLACEHOLDER_MAP[variant.name] ?? 'Type a value') : 'Select a label first'}
+                          value={variant.valueInput}
+                          onChange={(e) =>
+                            setProductVariants((prev) =>
+                              prev.map((v, i) => (i === vIdx ? { ...v, valueInput: e.target.value } : v))
+                            )
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addVariantOption(vIdx, variant.valueInput);
+                            }
+                          }}
+                          className={cn(!variant.name && 'bg-gray-50 text-gray-400')}
+                        />
+                        {variant.options.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {variant.options.map((opt, oIdx) => (
+                              <span key={oIdx} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                                {opt}
+                                <button type="button" onClick={() => removeVariantOption(vIdx, oIdx)} className="text-gray-500 hover:text-red-500">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Price & Stock table — only when at least one value exists */}
+                      {variant.options.length > 0 && (
+                        <div className="space-y-2 pt-1">
+                          <p className="text-sm font-medium text-gray-700">Price & stock per option</p>
+                          <p className="text-xs text-gray-500">Adjust if this option should cost or stock differently than the default below.</p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="text-left text-xs text-gray-500 border-b">
+                                  <th className="pb-2 pr-4 font-medium">Value</th>
+                                  <th className="pb-2 pr-4 font-medium">Price override (₦)</th>
+                                  <th className="pb-2 font-medium">Stock override</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {variant.options.map((opt) => (
+                                  <tr key={opt} className="border-b last:border-0">
+                                    <td className="py-2 pr-4 text-gray-700 font-medium">{opt}</td>
+                                    <td className="py-2 pr-4">
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={variant.priceOverrides[opt] ?? basePrice}
+                                        onChange={(e) =>
+                                          setProductVariants((prev) =>
+                                            prev.map((v, i) =>
+                                              i === vIdx ? { ...v, priceOverrides: { ...v.priceOverrides, [opt]: e.target.value } } : v
+                                            )
+                                          )
+                                        }
+                                        className="h-8 w-32"
+                                      />
+                                    </td>
+                                    <td className="py-2">
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={variant.stockOverrides[opt] ?? stock}
+                                        onChange={(e) =>
+                                          setProductVariants((prev) =>
+                                            prev.map((v, i) =>
+                                              i === vIdx ? { ...v, stockOverrides: { ...v.stockOverrides, [opt]: e.target.value } } : v
+                                            )
+                                          )
+                                        }
+                                        className="h-8 w-24"
+                                      />
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  ))}
+
+                  {productVariants.length >= 2 && (
+                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                      Note: per-option pricing currently works correctly for a single variant dimension. With two or more dimensions, pricing per combination (e.g. "Large + Gold") requires a combination matrix — this will be addressed in a future update.
+                    </p>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      productVariants.length > 0 &&
+                      (productVariants[productVariants.length - 1].name.trim() === '' ||
+                        productVariants[productVariants.length - 1].options.length === 0)
+                    }
+                    onClick={() =>
+                      setProductVariants((prev) => [
+                        ...prev,
+                        { name: '', options: [], valueInput: '', labelOpen: false, priceOverrides: {}, stockOverrides: {} },
+                      ])
+                    }
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Add Variant
+                  </Button>
                 </CardContent>
               </Card>
             </motion.div>
           )}
 
-          {/* Step 5: Customization & Badges */}
+          {/* Step 5: Personalization & Lead Time */}
           {currentStep === 5 && (
             <motion.div
               key="step-5"
@@ -1876,163 +1923,324 @@ export function CreateProductPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Variants */}
-              <Card className="border-0 shadow-sm mb-6">
+              <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Product Variants</CardTitle>
-                  <CardDescription>
-                    Options customers select before buying — e.g. Size, Colour, Material. Each variant is a label with selectable values.
-                  </CardDescription>
+                  <CardTitle>Personalization & Lead Time</CardTitle>
+                  <CardDescription>Set how long this product takes to prepare, and how much longer each personalization option adds.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {productVariants.map((variant, vIdx) => (
-                    <div key={vIdx} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                      <div className="flex gap-2 items-center">
-                        <Input
-                          placeholder="Variant label (e.g. Shoe Size, Colour)"
-                          value={variant.name}
-                          onChange={(e) =>
-                            setProductVariants((prev) =>
-                              prev.map((v, i) => i === vIdx ? { ...v, name: e.target.value } : v)
-                            )
-                          }
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setProductVariants((prev) => prev.filter((_, i) => i !== vIdx))}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add a value (e.g. UK 6) then press Enter"
-                          value={variant.valueInput}
-                          onChange={(e) =>
-                            setProductVariants((prev) =>
-                              prev.map((v, i) => i === vIdx ? { ...v, valueInput: e.target.value } : v)
-                            )
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const entries = variant.valueInput.split(',').map((s) => s.trim()).filter(Boolean);
-                              const newOnes = entries.filter((en) => !variant.options.includes(en));
-                              if (newOnes.length) {
-                                setProductVariants((prev) =>
-                                  prev.map((v, i) => i === vIdx ? { ...v, options: [...v.options, ...newOnes], valueInput: '' } : v)
-                                );
-                              }
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            const entries = variant.valueInput.split(',').map((s) => s.trim()).filter(Boolean);
-                            const newOnes = entries.filter((en) => !variant.options.includes(en));
-                            if (newOnes.length) {
-                              setProductVariants((prev) =>
-                                prev.map((v, i) => i === vIdx ? { ...v, options: [...v.options, ...newOnes], valueInput: '' } : v)
-                              );
-                            }
-                          }}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      {variant.options.length > 0 && (
+                <CardContent className="space-y-5">
+                  {/* Est. delivery days — required, comes first */}
+                  <div className="space-y-2">
+                    <Label htmlFor="estimatedDeliveryDays">Est. Delivery (days) *</Label>
+                    <p className="text-xs text-gray-500">How long this product takes to prepare with no personalization.</p>
+                    <Input
+                      id="estimatedDeliveryDays"
+                      type="number"
+                      min="0"
+                      value={estimatedDeliveryDays}
+                      onChange={(e) => setEstimatedDeliveryDays(e.target.value)}
+                      onBlur={() => setTouched((prev) => ({ ...prev, estimatedDeliveryDays: true }))}
+                      placeholder="e.g. 3"
+                      className={cn(
+                        'w-40',
+                        (!estimatedDeliveryDays || estimatedDeliveryDays.trim() === '') &&
+                          touched.estimatedDeliveryDays
+                          ? 'border-red-500 ring-1 ring-red-500'
+                          : ''
+                      )}
+                    />
+                    {(!estimatedDeliveryDays || estimatedDeliveryDays.trim() === '') && touched.estimatedDeliveryDays && (
+                      <p className="text-sm text-red-600">Estimated delivery is required</p>
+                    )}
+                  </div>
+
+                  <hr className="border-gray-200" />
+
+                  {/* Personalization toggle */}
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      type="button"
+                      checked={isPersonalizable}
+                      onCheckedChange={handlePersonalizableToggle}
+                    />
+                    <Label className="cursor-pointer" onClick={() => handlePersonalizableToggle(!isPersonalizable)}>
+                      Does this product offer personalization?
+                    </Label>
+                  </div>
+
+                  {isPersonalizable && (
+                    <div className="space-y-4">
+                      {/* Personalization type chips */}
+                      <div className="space-y-2">
+                        <Label>Personalization Types</Label>
                         <div className="flex flex-wrap gap-2">
-                          {variant.options.map((opt, oIdx) => (
-                            <span
-                              key={oIdx}
-                              className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm"
-                            >
-                              {opt}
+                          {PERSONALIZATION_CHIP_OPTIONS.map((typeName) => {
+                            const active = selectedPersonalizationTypes.includes(typeName);
+                            return (
                               <button
+                                key={typeName}
                                 type="button"
-                                onClick={() =>
-                                  setProductVariants((prev) =>
-                                    prev.map((v, i) => i === vIdx ? { ...v, options: v.options.filter((_, oi) => oi !== oIdx) } : v)
-                                  )
+                                onClick={() => togglePersonalizationType(typeName)}
+                                className="px-4 py-2 rounded-full text-sm font-medium border transition-colors"
+                                style={
+                                  active
+                                    ? { backgroundColor: '#F6511E', color: '#fff', borderColor: '#F6511E' }
+                                    : { backgroundColor: '#fff', color: '#374151', borderColor: '#d1d5db' }
                                 }
-                                className="text-gray-500 hover:text-red-500"
                               >
-                                <X className="w-3 h-3" />
+                                {active && <Check className="w-3 h-3 inline mr-1" />}
+                                {typeName}
                               </button>
-                            </span>
-                          ))}
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Per-type lead time */}
+                      {selectedPersonalizationTypes.length > 0 && (
+                        <div className="space-y-2">
+                          {selectedPersonalizationTypes.map((typeName) => {
+                            const extraDays = personalizationLeadTimes[typeName] ?? 0;
+                            const baseDays = parseInt(estimatedDeliveryDays, 10) || 0;
+                            const total = baseDays + extraDays;
+                            return (
+                              <div key={typeName} className="flex items-center gap-3 py-2 px-3 bg-gray-50 rounded-lg">
+                                <span
+                                  className="px-3 py-1 rounded-full text-sm font-medium text-white"
+                                  style={{ backgroundColor: '#F6511E' }}
+                                >
+                                  {typeName}
+                                </span>
+                                <span className="text-sm text-gray-600">adds</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={extraDays}
+                                  onChange={(e) =>
+                                    setPersonalizationLeadTimes((lt) => ({
+                                      ...lt,
+                                      [typeName]: parseInt(e.target.value, 10) || 0,
+                                    }))
+                                  }
+                                  className="h-8 w-20"
+                                />
+                                <span className="text-sm text-gray-600">days</span>
+                                <span className="text-sm text-gray-400">→</span>
+                                <span className="text-sm font-medium text-gray-800">total: {total} days</span>
+                              </div>
+                            );
+                          })}
+                          <p className="text-xs text-gray-500 pt-1">
+                            Each option shows its own total lead time — a customer picks one method per order, so these don't add together.
+                          </p>
                         </div>
                       )}
                     </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setProductVariants((prev) => [...prev, { name: '', options: [], valueInput: '' }])}
-                  >
-                    <Plus className="w-4 h-4 mr-2" /> Add Variant
-                  </Button>
+                  )}
                 </CardContent>
               </Card>
+            </motion.div>
+          )}
 
+          {/* Step 6: Additional Details & Badges */}
+          {currentStep === 6 && (
+            <motion.div
+              key="step-6"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Personalization</CardTitle>
-                  <CardDescription>
-                    Does this product offer personalization options?
-                  </CardDescription>
+                  <CardTitle>Additional Details</CardTitle>
+                  <CardDescription>Specs and information shown on the product page.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Label>Personalization Types</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {PERSONALIZATION_CHIP_OPTIONS.map((opt) => {
-                        const active = selectedPersonalizationTypes.includes(opt.name);
-                        return (
-                          <button
-                            key={opt.name}
-                            type="button"
-                            onClick={() =>
-                              setSelectedPersonalizationTypes((prev) =>
-                                active ? prev.filter((n) => n !== opt.name) : [...prev, opt.name]
-                              )
-                            }
-                            className="px-4 py-2 rounded-full text-sm font-medium border transition-colors"
-                            style={
-                              active
-                                ? { backgroundColor: '#F6511E', color: '#fff', borderColor: '#F6511E' }
-                                : { backgroundColor: '#fff', color: '#374151', borderColor: '#d1d5db' }
-                            }
+                <CardContent className="space-y-5">
+                  {/* Weight */}
+                  <div className="space-y-2">
+                    <Label htmlFor="weightValue">Weight</Label>
+                    <div className="flex gap-2 w-48">
+                      <Input
+                        id="weightValue"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={weightValue}
+                        onChange={(e) => setWeightValue(e.target.value)}
+                        placeholder="e.g. 250"
+                        className="flex-1"
+                      />
+                      <Select value={weightUnit} onValueChange={(v) => setWeightUnit(v as typeof weightUnit)}>
+                        <SelectTrigger className="w-20" type="button">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="g">g</SelectItem>
+                          <SelectItem value="kg">kg</SelectItem>
+                          <SelectItem value="lb">lb</SelectItem>
+                          <SelectItem value="oz">oz</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Materials — chip-on-enter */}
+                  <div className="space-y-2">
+                    <Label>Materials</Label>
+                    <Input
+                      value={materialInput}
+                      onChange={(e) => setMaterialInput(e.target.value)}
+                      placeholder="Type a material, then press Enter"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addMaterial();
+                        }
+                      }}
+                    />
+                    {materials.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {materials.map((material, index) => (
+                          <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                            {material}
+                            <button type="button" onClick={() => removeMaterial(index)} className="text-gray-500 hover:text-red-500">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tags — chip-on-enter */}
+                  <div className="space-y-2">
+                    <Label>Tags</Label>
+                    <Input
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      placeholder="Type a tag, then press Enter"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addTag();
+                        }
+                      }}
+                    />
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm"
+                            style={{ backgroundColor: '#fef3e7', color: '#F6511E' }}
                           >
-                            {opt.name}
-                          </button>
+                            {tag}
+                            <button type="button" onClick={() => removeTag(index)} className="hover:opacity-70" style={{ color: '#F6511E' }}>
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Key Information — label preset dropdown */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Label>Key Information</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              These rows appear under "KEY INFO" on the buyer's product page. Add facts that help customers decide.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={addKeyInfo}>
+                        <Plus className="w-4 h-4 mr-1" /> Add More
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-500">Shown on the buyer's product page.</p>
+                    <div className="space-y-3">
+                      {keyInfo.map((info, index) => {
+                        const isCustom = keyInfoCustom[index] ?? false;
+                        const selectVal = KEY_INFO_LABEL_PRESETS.includes(info.label)
+                          ? info.label
+                          : isCustom
+                          ? 'custom'
+                          : '';
+                        return (
+                          <div key={index} className="space-y-1">
+                            <div className="flex gap-2 items-start">
+                              <div className="flex-1 space-y-1">
+                                <Select
+                                  value={selectVal}
+                                  onValueChange={(val) => {
+                                    if (val === 'custom') {
+                                      setKeyInfoCustom((prev) => prev.map((c, i) => (i === index ? true : c)));
+                                      updateKeyInfo(index, 'label', '');
+                                    } else {
+                                      setKeyInfoCustom((prev) => prev.map((c, i) => (i === index ? false : c)));
+                                      updateKeyInfo(index, 'label', val);
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger type="button">
+                                    <SelectValue placeholder="Select a label" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {KEY_INFO_LABEL_PRESETS.map((p) => (
+                                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">Custom...</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {isCustom && (
+                                  <Input
+                                    placeholder="Type your label"
+                                    value={info.label}
+                                    onChange={(e) => updateKeyInfo(index, 'label', e.target.value)}
+                                  />
+                                )}
+                              </div>
+                              <Input
+                                placeholder="Value (e.g., 10cm x 15cm)"
+                                value={info.value}
+                                onChange={(e) => updateKeyInfo(index, 'value', e.target.value)}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeKeyInfo(index)}
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                disabled={keyInfo.length === 1}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
-                    <p className="text-sm text-gray-500">
-                      {selectedPersonalizationTypes.length === 0
-                        ? 'No personalisation offered — select at least one type to enable it'
-                        : `Customers can request: ${selectedPersonalizationTypes.join(', ')}`}
-                    </p>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Product Badges</CardTitle>
-                  <CardDescription>Vendor-applied badge for this product. Best Seller and Featured are assigned by admin.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <Switch type="button" checked={isMadeInNigeria} onCheckedChange={setIsMadeInNigeria} />
-                    <Label>Made in Nigeria 🇳🇬</Label>
+                  <hr className="border-gray-200" />
+
+                  {/* Product Badges */}
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Product Badges</Label>
+                    <p className="text-sm text-gray-500">Best Seller and Featured are assigned by admin.</p>
+                    <div className="flex items-center gap-2">
+                      <Switch type="button" checked={isMadeInNigeria} onCheckedChange={setIsMadeInNigeria} />
+                      <Label>Made in Nigeria 🇳🇬</Label>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
