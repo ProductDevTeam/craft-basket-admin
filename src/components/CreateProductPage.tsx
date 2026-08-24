@@ -669,7 +669,7 @@ export function CreateProductPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        if (!vendorId || !name || !description || !sku) {
+        if (!vendorId || !name || !description) {
           markStepTouched(1);
           toast.error('Please fill in all required fields');
           return false;
@@ -1057,14 +1057,14 @@ export function CreateProductPage() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 min-h-[24px]">
-                        <Label htmlFor="sku">SKU *</Label>
+                        <Label htmlFor="sku">SKU</Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="w-4 h-4 text-gray-400 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent>
                             <p className="max-w-xs">
-                              Auto-generated when you select a vendor. You can modify it if needed.
+                              Auto-generated when you select a vendor.
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -1072,14 +1072,9 @@ export function CreateProductPage() {
                       <Input
                         id="sku"
                         value={sku}
-                        onChange={(e) => setSku(e.target.value)}
-                        onBlur={() => setTouchedField('sku')}
+                        readOnly
                         placeholder={vendorId ? 'Generating...' : 'Select a vendor first'}
-                        className={
-                          !sku && (isSubmitting || touched.sku)
-                            ? 'border-red-500 ring-1 ring-red-500'
-                            : ''
-                        }
+                        className="bg-gray-50 text-gray-500 cursor-default"
                       />
                       {!sku && (isSubmitting || touched.sku) && (
                         <p className="text-sm text-red-600 mt-1">SKU is required</p>
