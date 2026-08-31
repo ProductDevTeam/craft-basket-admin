@@ -3,11 +3,11 @@ import { Navigate } from 'react-router-dom';
 import { User } from '../types';
 import { apiClient } from '../lib/api';
 
-const STAFF_ROLES = ['admin', 'super_admin', 'support'] as const;
+const STAFF_ROLES = ['ADMIN', 'SUPER_ADMIN', 'SUPPORT'] as const;
 type StaffRole = typeof STAFF_ROLES[number];
 
-export const isSuperAdmin = (role?: string): boolean => role === 'super_admin';
-export const isAdminOrAbove = (role?: string): boolean => role === 'admin' || role === 'super_admin';
+export const isSuperAdmin = (role?: string): boolean => role === 'SUPER_ADMIN';
+export const isAdminOrAbove = (role?: string): boolean => role === 'ADMIN' || role === 'SUPER_ADMIN';
 export const isStaff = (role?: string): boolean => STAFF_ROLES.includes(role as StaffRole);
 
 export function RoleGuard({

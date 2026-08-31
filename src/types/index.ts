@@ -3,7 +3,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'super_admin' | 'support' | 'vendor' | 'customer';
+  role: 'ADMIN' | 'SUPER_ADMIN' | 'SUPPORT' | 'VENDOR' | 'CUSTOMER';
   isActive: boolean;
   vendorInfo?: {
     businessName: string;
