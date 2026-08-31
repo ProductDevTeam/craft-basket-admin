@@ -51,9 +51,9 @@ function AdminContent() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/products" element={<ProductsListPage />} />
         <Route path="/products/:id" element={<ProductViewPage />} />
-        <Route path="/create-product" element={<RoleGuard roles={['super_admin', 'admin']}><CreateProductPage /></RoleGuard>} />
-        <Route path="/edit-product/:id" element={<RoleGuard roles={['super_admin', 'admin']}><CreateProductPage /></RoleGuard>} />
-        <Route path="/categories" element={<RoleGuard roles={['super_admin', 'admin']}><CategoriesPage /></RoleGuard>} />
+        <Route path="/create-product" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><CreateProductPage /></RoleGuard>} />
+        <Route path="/edit-product/:id" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><CreateProductPage /></RoleGuard>} />
+        <Route path="/categories" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><CategoriesPage /></RoleGuard>} />
         <Route path="/vendors" element={<VendorsPage />} />
         <Route path="/email" element={<EmailOverviewPage />} />
         <Route path="/email/templates" element={<EmailTemplatesPage />} />
@@ -65,15 +65,15 @@ function AdminContent() {
         <Route path="/email/campaigns/:id" element={<EmailCampaignDetailsPage />} />
         <Route path="/email/automation" element={<AutomationRulesPage />} />
         <Route path="/email/subscribers" element={<SubscribersPage />} />
-        <Route path="/occasion" element={<RoleGuard roles={['super_admin', 'admin']}><OccasionPage /></RoleGuard>} />
-        <Route path="/occasion/new" element={<RoleGuard roles={['super_admin', 'admin']}><OccasionFormPage /></RoleGuard>} />
-        <Route path="/occasion/:id/edit" element={<RoleGuard roles={['super_admin', 'admin']}><OccasionFormPage /></RoleGuard>} />
-        <Route path="/gift-addons" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonsPage /></RoleGuard>} />
-        <Route path="/gift-addons/category/new" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonCategoryFormPage /></RoleGuard>} />
-        <Route path="/gift-addons/category/:id/edit" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonCategoryFormPage /></RoleGuard>} />
-        <Route path="/gift-addons/category/:categoryId/item/new" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonItemFormPage /></RoleGuard>} />
-        <Route path="/gift-addons/category/:categoryId/item/:itemId/edit" element={<RoleGuard roles={['super_admin', 'admin']}><GiftAddonItemFormPage /></RoleGuard>} />
-        <Route path="/delivery-sandbox" element={<RoleGuard roles={['super_admin', 'admin']}><DeliverySandboxPage /></RoleGuard>} />
+        <Route path="/occasion" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><OccasionPage /></RoleGuard>} />
+        <Route path="/occasion/new" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><OccasionFormPage /></RoleGuard>} />
+        <Route path="/occasion/:id/edit" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><OccasionFormPage /></RoleGuard>} />
+        <Route path="/gift-addons" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><GiftAddonsPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/new" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><GiftAddonCategoryFormPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/:id/edit" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><GiftAddonCategoryFormPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/:categoryId/item/new" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><GiftAddonItemFormPage /></RoleGuard>} />
+        <Route path="/gift-addons/category/:categoryId/item/:itemId/edit" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><GiftAddonItemFormPage /></RoleGuard>} />
+        <Route path="/delivery-sandbox" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><DeliverySandboxPage /></RoleGuard>} />
       </Routes>
     </AdminLayout>
   );

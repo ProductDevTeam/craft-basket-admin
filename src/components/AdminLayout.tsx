@@ -80,22 +80,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const ROLE_LABELS: Record<string, string> = {
-    super_admin: 'Super Admin',
-    admin: 'Admin',
-    support: 'Support',
+    SUPER_ADMIN: 'Super Admin',
+    ADMIN: 'Admin',
+    SUPPORT: 'Support',
   };
 
   const allNavItems: { name: string; path: string; icon: React.ElementType; disabled?: boolean; badge?: string; roles: string[] }[] = [
-    { name: 'Dashboard',      path: '/dashboard',       icon: LayoutDashboard, roles: ['super_admin', 'admin', 'support'] },
-    { name: 'Products',       path: '/products',        icon: ShoppingBag,     roles: ['super_admin', 'admin', 'support'] },
-    { name: 'Categories',     path: '/categories',      icon: FolderTree,      roles: ['super_admin', 'admin'] },
-    { name: 'Occasions',      path: '/occasion',        icon: Gift,            roles: ['super_admin', 'admin'] },
-    { name: 'Gift Add-ons',   path: '/gift-addons',     icon: Tag,             roles: ['super_admin', 'admin'] },
-    { name: 'Vendors',        path: '/vendors',         icon: Users,           roles: ['super_admin', 'admin', 'support'] },
-    { name: 'Email',          path: '/email',           icon: Mail,            roles: ['super_admin', 'admin', 'support'] },
-    { name: 'Orders',         path: '/orders',          icon: ShoppingCart,    roles: ['super_admin', 'admin', 'support'], disabled: true },
-    { name: 'Analytics',      path: '/analytics',       icon: BarChart3,       roles: ['super_admin', 'admin'], disabled: true },
-    { name: 'Delivery Test',  path: '/delivery-sandbox',icon: Truck,           roles: ['super_admin', 'admin'], badge: 'Test' },
+    { name: 'Dashboard',      path: '/dashboard',       icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
+    { name: 'Products',       path: '/products',        icon: ShoppingBag,     roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
+    { name: 'Categories',     path: '/categories',      icon: FolderTree,      roles: ['SUPER_ADMIN', 'ADMIN'] },
+    { name: 'Occasions',      path: '/occasion',        icon: Gift,            roles: ['SUPER_ADMIN', 'ADMIN'] },
+    { name: 'Gift Add-ons',   path: '/gift-addons',     icon: Tag,             roles: ['SUPER_ADMIN', 'ADMIN'] },
+    { name: 'Vendors',        path: '/vendors',         icon: Users,           roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
+    { name: 'Email',          path: '/email',           icon: Mail,            roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'] },
+    { name: 'Orders',         path: '/orders',          icon: ShoppingCart,    roles: ['SUPER_ADMIN', 'ADMIN', 'SUPPORT'], disabled: true },
+    { name: 'Analytics',      path: '/analytics',       icon: BarChart3,       roles: ['SUPER_ADMIN', 'ADMIN'], disabled: true },
+    { name: 'Delivery Test',  path: '/delivery-sandbox',icon: Truck,           roles: ['SUPER_ADMIN', 'ADMIN'], badge: 'Test' },
   ];
 
   const navigationItems = allNavItems.filter(item => item.roles.includes(user?.role || ''));
