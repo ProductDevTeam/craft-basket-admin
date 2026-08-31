@@ -236,12 +236,13 @@ export function ProductsListPage() {
   };
 
   const getStatusBadge = (status: string) => {
+    if (status === 'APPROVED') return null;
     const variants: Record<string, { label: string; className: string }> = {
-      APPROVED: { label: 'Approved', className: 'bg-green-500/90 text-white border-0' },
       PENDING:  { label: 'Pending',  className: 'bg-yellow-500/90 text-white border-0' },
       REJECTED: { label: 'Rejected', className: 'bg-red-500/90 text-white border-0' },
     };
-    const variant = variants[status] || variants.PENDING;
+    const variant = variants[status];
+    if (!variant) return null;
     return <Badge className={`text-xs ${variant.className}`}>{variant.label}</Badge>;
   };
 

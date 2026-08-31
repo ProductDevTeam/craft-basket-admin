@@ -118,12 +118,13 @@ export function ProductViewPage() {
   }, [mediaType, product]);
 
   const getStatusBadge = (status: string) => {
+    if (status === 'APPROVED') return null;
     const variants: Record<string, { label: string; className: string }> = {
-      APPROVED: { label: 'Approved', className: 'bg-green-50 text-green-700 border-green-100' },
-      PENDING: { label: 'Pending Review', className: 'bg-amber-50 text-amber-700 border-amber-100' },
-      REJECTED: { label: 'Rejected', className: 'bg-red-50 text-red-700 border-red-100' },
+      PENDING:  { label: 'Pending Review', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+      REJECTED: { label: 'Rejected',       className: 'bg-red-50 text-red-700 border-red-100' },
     };
-    const variant = variants[status] || variants.PENDING;
+    const variant = variants[status];
+    if (!variant) return null;
     return (
       <Badge variant="outline" className={`${variant.className} rounded-full px-3 py-0.5 text-xs font-medium`}>
         {variant.label}
