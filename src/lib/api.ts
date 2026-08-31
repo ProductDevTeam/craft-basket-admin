@@ -160,6 +160,14 @@ class ApiClient {
     return this.request(`/admin/activity-logs?${queryParams.toString()}`);
   }
 
+  async approveProduct(id: string): Promise<ApiResponse<unknown>> {
+    return this.request(`/admin/products/${id}/approve`, { method: 'POST' });
+  }
+
+  async toggleProductActive(id: string): Promise<ApiResponse<unknown>> {
+    return this.request(`/admin/products/${id}/toggle-active`, { method: 'PATCH' });
+  }
+
   async deleteProduct(id: string): Promise<ApiResponse<null>> {
     return this.request(`/products/${id}`, {
       method: 'DELETE',

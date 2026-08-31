@@ -9,6 +9,9 @@ import {
   Trash2,
   Video as VideoIcon,
   Clock,
+  CheckCircle,
+  Power,
+  Loader2,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
@@ -132,6 +135,37 @@ export function ProductViewPage() {
     );
   };
 
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleApprove = async () => {
+    if (!product) return;
+    setActionLoading(true);
+    try {
+      await apiClient.approveProduct(product.id);
+      toast.success('Product approved and activated');
+      setProduct({ ...product, approvalStatus: 'APPROVED', isActive: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to approve product');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    if (!product) return;
+    setActionLoading(true);
+    try {
+      await apiClient.toggleProductActive(product.id);
+      const next = !product.isActive;
+      toast.success(next ? 'Product activated' : 'Product deactivated');
+      setProduct({ ...product, isActive: next });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update product');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (!product) return;
     try {
@@ -167,6 +201,32 @@ export function ProductViewPage() {
           <p className="text-sm text-gray-400 mt-0.5">SKU: {product.sku}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {product.approvalStatus === 'PENDING' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-9 text-green-700 hover:bg-green-50 border-green-200"
+              onClick={handleApprove}
+              disabled={actionLoading}
+            >
+              {actionLoading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-1.5" />}
+              Approve
+            </Button>
+          )}
+          {product.approvalStatus === 'APPROVED' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className={`rounded-xl h-9 ${product.isActive
+                ? 'text-orange-600 hover:bg-orange-50 border-orange-200'
+                : 'text-blue-600 hover:bg-blue-50 border-blue-200'}`}
+              onClick={handleToggleActive}
+              disabled={actionLoading}
+            >
+              {actionLoading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Power className="w-4 h-4 mr-1.5" />}
+              {product.isActive ? 'Deactivate' : 'Activate'}
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="rounded-xl h-9" onClick={() => navigate(`/edit-product/${id}`)}>
             <Edit className="w-4 h-4 mr-1.5" />
             Edit
