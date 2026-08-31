@@ -172,9 +172,9 @@ export function EmailOverviewPage() {
                   const cfg = statusConfig[c.status] || statusConfig.draft;
                   return (
                     <div
-                      key={c._id}
+                      key={c.id}
                       className="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50/60 cursor-pointer transition-colors"
-                      onClick={() => ['sent','sending','scheduled'].includes(c.status) && navigate(`/email/campaigns/${c._id}`)}
+                      onClick={() => ['sent','sending','scheduled'].includes(c.status) && navigate(`/email/campaigns/${c.id}`)}
                     >
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFF4F0' }}>
                         <Mail className="w-3.5 h-3.5" style={{ color: '#F6511E' }} />
@@ -220,7 +220,7 @@ export function EmailOverviewPage() {
               <div className="divide-y divide-gray-50">
                 {rules.map((r) => (
                   <div
-                    key={r._id}
+                    key={r.id}
                     className="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50/60 cursor-pointer transition-colors"
                     onClick={() => navigate('/email/automation')}
                   >

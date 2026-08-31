@@ -63,8 +63,8 @@ export function AutomationRulesPage() {
 
   const handleToggle = async (rule: EmailAutomationRule, enabled: boolean) => {
     try {
-      await apiClient.updateAutomationRule(rule._id, { isEnabled: enabled } as Partial<EmailAutomationRule>);
-      setRules((prev) => prev.map((r) => r._id === rule._id ? { ...r, isEnabled: enabled } : r));
+      await apiClient.updateAutomationRule(rule.id, { isEnabled: enabled } as Partial<EmailAutomationRule>);
+      setRules((prev) => prev.map((r) => r.id === rule.id ? { ...r, isEnabled: enabled } : r));
       toast.success(`Rule ${enabled ? 'enabled' : 'disabled'}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update');
@@ -85,7 +85,7 @@ export function AutomationRulesPage() {
     setEditingRule(rule);
     setFormName(rule.name);
     setFormTrigger(rule.trigger);
-    setFormTemplate(typeof rule.template === 'object' && rule.template ? rule.template._id : '');
+    setFormTemplate(typeof rule.template === 'object' && rule.template ? rule.template.id : '');
     setFormSubject(rule.subject);
     setFormEnabled(rule.isEnabled);
     setShowForm(true);
@@ -99,7 +99,7 @@ export function AutomationRulesPage() {
     try {
       setIsSavingForm(true);
       if (editingRule) {
-        await apiClient.updateAutomationRule(editingRule._id, {
+        await apiClient.updateAutomationRule(editingRule.id, {
           name: formName,
           isEnabled: formEnabled,
           template: formTemplate || undefined,
@@ -185,7 +185,7 @@ export function AutomationRulesPage() {
             {rules.map((rule) => {
               const info = TRIGGER_INFO[rule.trigger] || TRIGGER_INFO.registration;
               return (
-                <Card key={rule._id} className="border-0 shadow-sm">
+                <Card key={rule.id} className="border-0 shadow-sm">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -215,7 +215,7 @@ export function AutomationRulesPage() {
                         <Button variant="ghost" size="sm" onClick={() => openEditForm(rule)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600" onClick={() => setDeleteId(rule._id)}>
+                        <Button variant="ghost" size="sm" className="text-red-600" onClick={() => setDeleteId(rule.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -260,7 +260,7 @@ export function AutomationRulesPage() {
                   <SelectContent>
                     <SelectItem value="none">No template (use default)</SelectItem>
                     {templates.map((t) => (
-                      <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

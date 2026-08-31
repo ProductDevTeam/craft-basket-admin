@@ -1,5 +1,5 @@
 export interface User {
-  _id: string;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface Vendor {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -21,7 +21,7 @@ export interface Vendor {
 }
 
 export interface Category {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
 }
@@ -198,14 +198,14 @@ export interface ApiResponse<T> {
 export type EmailTemplateCategory = 'welcome' | 'birthday' | 'promotional' | 'newsletter' | 'transactional' | 'custom';
 
 export interface EmailTemplate {
-  _id: string;
+  id: string;
   name: string;
   subject: string;
   htmlContent: string;
   jsonContent?: Record<string, unknown>;
   category: EmailTemplateCategory;
   isActive: boolean;
-  createdBy: { _id: string; firstName: string; lastName: string };
+  createdBy: { id: string; firstName: string; lastName: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -214,12 +214,12 @@ export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'faile
 export type AudienceSegment = 'all_customers' | 'all_vendors' | 'birthday_this_month' | 'new_customers_30d' | 'inactive_customers_90d' | 'custom';
 
 export interface EmailCampaign {
-  _id: string;
+  id: string;
   name: string;
   subject: string;
   htmlContent: string;
   jsonContent?: Record<string, unknown>;
-  template?: { _id: string; name: string; subject?: string };
+  template?: { id: string; name: string; subject?: string };
   status: CampaignStatus;
   audienceSegment: AudienceSegment;
   customRecipients?: string[];
@@ -228,7 +228,7 @@ export interface EmailCampaign {
   totalRecipients: number;
   successCount: number;
   failCount: number;
-  createdBy: { _id: string; firstName: string; lastName: string };
+  createdBy: { id: string; firstName: string; lastName: string };
   createdAt: string;
   updatedAt: string;
 }
@@ -236,21 +236,21 @@ export interface EmailCampaign {
 export type AutomationTrigger = 'registration' | 'birthday' | 'inactive_30d' | 'first_purchase';
 
 export interface EmailAutomationRule {
-  _id: string;
+  id: string;
   name: string;
   trigger: AutomationTrigger;
   isEnabled: boolean;
-  template?: { _id: string; name: string; subject?: string };
+  template?: { id: string; name: string; subject?: string };
   subject: string;
   htmlContent?: string;
   lastRunAt?: string;
-  createdBy: { _id: string; firstName: string; lastName: string };
+  createdBy: { id: string; firstName: string; lastName: string };
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Subscriber {
-  _id: string;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -273,12 +273,12 @@ export interface DashboardStats {
   recentOrders?: number;
   totalRevenue?: number;
   orderStats?: Array<{
-    _id: string;
+    id: string;
     count: number;
     totalAmount: number;
   }>;
   recentOrdersList?: Array<{
-    _id: string;
+    id: string;
     orderNumber: string;
     totalAmount: number;
     status: string;

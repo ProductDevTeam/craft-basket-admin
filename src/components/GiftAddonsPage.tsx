@@ -141,7 +141,7 @@ function CategorySection({ cat, index, onCategoryUpdated, onCategoryDeleted }: {
   const fetchItems = async () => {
     setLoadingItems(true);
     try {
-      const res = await apiClient.getAddonItems(cat._id);
+      const res = await apiClient.getAddonItems(cat.id);
       setItems((res.data as AddonItem[]) || []);
     } catch { toast.error('Failed to load items'); }
     finally { setLoadingItems(false); }
@@ -157,7 +157,7 @@ function CategorySection({ cat, index, onCategoryUpdated, onCategoryDeleted }: {
     setTogglingCat(true);
     onCategoryUpdated({ ...cat, isActive: !cat.isActive }); // optimistic
     try {
-      const res = await apiClient.updateAddonCategory(cat._id, { isActive: !cat.isActive });
+      const res = await apiClient.updateAddonCategory(cat.id, { isActive: !cat.isActive });
       onCategoryUpdated(res.data as AddonCategory);
     } catch {
       toast.error('Failed to toggle');
@@ -169,8 +169,8 @@ function CategorySection({ cat, index, onCategoryUpdated, onCategoryDeleted }: {
     if (!deleteItem) return;
     setDeletingItem(true);
     try {
-      await apiClient.deleteAddonItem(deleteItem._id);
-      setItems((p) => p.filter((i) => i._id !== deleteItem._id));
+      await apiClient.deleteAddonItem(deleteItem.id);
+      setItems((p) => p.filter((i) => i.id !== deleteItem.id));
       toast.success('Item deleted');
       setDeleteItem(null);
     } catch { toast.error('Failed to delete item'); }
@@ -179,8 +179,8 @@ function CategorySection({ cat, index, onCategoryUpdated, onCategoryDeleted }: {
 
   const handleDeleteCat = async () => {
     try {
-      await apiClient.deleteAddonCategory(cat._id);
-      onCategoryDeleted(cat._id);
+      await apiClient.deleteAddonCategory(cat.id);
+      onCategoryDeleted(cat.id);
       toast.success(`"${cat.name}" deleted`);
     } catch { toast.error('Failed to delete category'); }
   };
@@ -217,7 +217,7 @@ function CategorySection({ cat, index, onCategoryUpdated, onCategoryDeleted }: {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => navigate(`/gift-addons/category/${cat._id}/edit`)}>
+            <DropdownMenuItem onClick={() => navigate(`/gift-addons/category/${cat.id}/edit`)}>
               <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit category
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -276,9 +276,9 @@ function CategorySection({ cat, index, onCategoryUpdated, onCategoryDeleted }: {
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                       {items.map((item) => (
                         <ItemCard
-                          key={item._id}
+                          key={item.id}
                           item={item}
-                          onEdit={() => navigate(`/gift-addons/category/${cat._id}/item/${item._id}/edit`)}
+                          onEdit={() => navigate(`/gift-addons/category/${cat.id}/item/${item.id}/edit`)}
                           onDelete={() => setDeleteItem(item)}
                         />
                       ))}
@@ -294,7 +294,7 @@ function CategorySection({ cat, index, onCategoryUpdated, onCategoryDeleted }: {
                   )}
 
                   <button
-                    onClick={() => navigate(`/gift-addons/category/${cat._id}/item/new`)}
+                    onClick={() => navigate(`/gift-addons/category/${cat.id}/item/new`)}
                     className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
                     style={{ color: '#F6511E' }}
                   >
@@ -404,13 +404,13 @@ export function GiftAddonsPage() {
         <div className="space-y-3">
           {categories.map((cat, i) => (
             <CategorySection
-              key={cat._id}
+              key={cat.id}
               cat={cat}
               index={i}
               onCategoryUpdated={(updated) =>
-                setCategories((p) => p.map((c) => c._id === updated._id ? updated : c))}
+                setCategories((p) => p.map((c) => c.id === updated.id ? updated : c))}
               onCategoryDeleted={(id) =>
-                setCategories((p) => p.filter((c) => c._id !== id))}
+                setCategories((p) => p.filter((c) => c.id !== id))}
             />
           ))}
         </div>

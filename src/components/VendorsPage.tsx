@@ -281,7 +281,7 @@ export function VendorsPage() {
                 <TableBody>
                   {filteredVendors.map((vendor, index) => (
                     <motion.tr
-                      key={vendor._id}
+                      key={vendor.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
@@ -317,13 +317,13 @@ export function VendorsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => navigate(`/products?vendor=${vendor._id}`)}
+                              onClick={() => navigate(`/products?vendor=${vendor.id}`)}
                             >
                               <Eye className="w-4 h-4 mr-2" />
                               View Products
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => navigate(`/create-product?vendor=${vendor._id}`)}
+                              onClick={() => navigate(`/create-product?vendor=${vendor.id}`)}
                             >
                               <Plus className="w-4 h-4 mr-2" />
                               Create Product

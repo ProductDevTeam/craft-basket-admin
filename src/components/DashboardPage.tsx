@@ -520,7 +520,7 @@ export function DashboardPage() {
                   <div className="space-y-1">
                     {activityLogs.slice(0, 8).map((log, index) => (
                       <motion.div
-                        key={log._id}
+                        key={log.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}

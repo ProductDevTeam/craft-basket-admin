@@ -98,7 +98,7 @@ function InlineForm({ parentId, editingCategory, onSave, onCancel, showImage }: 
       if (image) formData.append('image', image);
 
       if (isEdit && editingCategory) {
-        await apiClient.updateCategory(editingCategory._id, formData);
+        await apiClient.updateCategory(editingCategory.id, formData);
         toast.success(`"${name}" updated`);
       } else {
         await apiClient.createCategory(formData);
@@ -283,14 +283,14 @@ export function CategoriesPage() {
     [categories, searchQuery, statusFilter]
   );
 
-  const selectedParent = parentCategories.find((p) => p._id === selectedParentId);
+  const selectedParent = parentCategories.find((p) => p.id === selectedParentId);
 
   const childCategories = useMemo(
     () =>
       categories
         .filter((c) => {
           if (!c.parent || !selectedParentId) return false;
-          const pid = typeof c.parent === 'object' ? c.parent._id : c.parent;
+          const pid = typeof c.parent === 'object' ? c.parent.id : c.parent;
           return pid === selectedParentId;
         })
         .filter((c) => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -306,7 +306,7 @@ export function CategoriesPage() {
   // Auto-select first parent
   useEffect(() => {
     if (!selectedParentId && parentCategories.length > 0) {
-      setSelectedParentId(parentCategories[0]._id);
+      setSelectedParentId(parentCategories[0].id);
     }
   }, [parentCategories, selectedParentId]);
 
@@ -320,11 +320,11 @@ export function CategoriesPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setIsDeletingId(deleteTarget._id);
+    setIsDeletingId(deleteTarget.id);
     try {
-      await apiClient.deleteCategory(deleteTarget._id);
+      await apiClient.deleteCategory(deleteTarget.id);
       toast.success(`"${deleteTarget.name}" deleted`);
-      if (deleteTarget._id === selectedParentId) {
+      if (deleteTarget.id === selectedParentId) {
         setSelectedParentId(null);
       }
       setDeleteTarget(null);
@@ -443,16 +443,16 @@ export function CategoriesPage() {
             ) : (
               <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
                 {parentCategories.map((cat) => {
-                  const isSelected = cat._id === selectedParentId;
+                  const isSelected = cat.id === selectedParentId;
                   const childCount = categories.filter((c) => {
                     if (!c.parent) return false;
-                    const pid = typeof c.parent === 'object' ? c.parent._id : c.parent;
-                    return pid === cat._id;
+                    const pid = typeof c.parent === 'object' ? c.parent.id : c.parent;
+                    return pid === cat.id;
                   }).length;
 
                   return (
                     <motion.div
-                      key={cat._id}
+                      key={cat.id}
                       layout
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${
                         isSelected
@@ -460,7 +460,7 @@ export function CategoriesPage() {
                           : 'hover:bg-gray-50 border border-transparent'
                       }`}
                       onClick={() => {
-                        setSelectedParentId(cat._id);
+                        setSelectedParentId(cat.id);
                         setShowAddChild(false);
                         setEditingChild(null);
                       }}
@@ -577,7 +577,7 @@ export function CategoriesPage() {
                     <AnimatePresence>
                       {childCategories.map((child, idx) => (
                         <motion.div
-                          key={child._id}
+                          key={child.id}
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}

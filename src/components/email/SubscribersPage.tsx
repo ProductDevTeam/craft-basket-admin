@@ -143,7 +143,7 @@ export function SubscribersPage() {
                 </TableHeader>
                 <TableBody>
                   {subscribers.map((sub) => (
-                    <TableRow key={sub._id}>
+                    <TableRow key={sub.id}>
                       <TableCell className="font-medium">{sub.firstName} {sub.lastName}</TableCell>
                       <TableCell className="text-gray-600">{sub.email}</TableCell>
                       <TableCell className="text-gray-500 text-sm">

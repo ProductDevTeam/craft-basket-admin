@@ -62,7 +62,7 @@ interface Product {
   isBestSeller: boolean;
   isMadeInNigeria?: boolean;
   personalizationType?: 'none' | 'engraving' | 'sticker' | 'print-on';
-  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   materials?: string[];
   weight?: string;
   color?: string;
@@ -119,11 +119,11 @@ export function ProductViewPage() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string }> = {
-      approved: { label: 'Approved', className: 'bg-green-50 text-green-700 border-green-100' },
-      pending: { label: 'Pending Review', className: 'bg-amber-50 text-amber-700 border-amber-100' },
-      rejected: { label: 'Rejected', className: 'bg-red-50 text-red-700 border-red-100' },
+      APPROVED: { label: 'Approved', className: 'bg-green-50 text-green-700 border-green-100' },
+      PENDING: { label: 'Pending Review', className: 'bg-amber-50 text-amber-700 border-amber-100' },
+      REJECTED: { label: 'Rejected', className: 'bg-red-50 text-red-700 border-red-100' },
     };
-    const variant = variants[status] || variants.pending;
+    const variant = variants[status] || variants.PENDING;
     return (
       <Badge variant="outline" className={`${variant.className} rounded-full px-3 py-0.5 text-xs font-medium`}>
         {variant.label}

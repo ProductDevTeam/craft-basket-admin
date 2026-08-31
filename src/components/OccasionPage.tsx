@@ -161,15 +161,15 @@ export function OccasionPage() {
   useEffect(() => { fetchOccasions(); }, []);
 
   const handleToggle = async (occ: Category) => {
-    setTogglingId(occ._id);
+    setTogglingId(occ.id);
     // Optimistic update
     setOccasions((prev) =>
-      prev.map((o) => o._id === occ._id ? { ...o, isActive: !o.isActive } : o)
+      prev.map((o) => o.id === occ.id ? { ...o, isActive: !o.isActive } : o)
     );
     try {
       const formData = new FormData();
       formData.append('isActive', String(occ.isActive === false ? true : false));
-      await apiClient.updateCategory(occ._id, formData);
+      await apiClient.updateCategory(occ.id, formData);
       revalidateOccasions();
     } catch (err: any) {
       toast.error('Failed to update');
@@ -197,8 +197,8 @@ export function OccasionPage() {
       const fA = new FormData(); fA.append('sortOrder', String(itemA.sortOrder));
       const fB = new FormData(); fB.append('sortOrder', String(itemB.sortOrder));
       await Promise.all([
-        apiClient.updateCategory(itemA._id, fA),
-        apiClient.updateCategory(itemB._id, fB),
+        apiClient.updateCategory(itemA.id, fA),
+        apiClient.updateCategory(itemB.id, fB),
       ]);
     } catch (err: any) {
       toast.error('Failed to reorder');
@@ -214,7 +214,7 @@ export function OccasionPage() {
     try {
       const formData = new FormData();
       formData.append('featuredOnHomepage', 'false');
-      await apiClient.updateCategory(removeTarget._id, formData);
+      await apiClient.updateCategory(removeTarget.id, formData);
       toast.success(`"${removeTarget.name}" removed from homepage`);
       revalidateOccasions();
       setRemoveTarget(null);
@@ -267,17 +267,17 @@ export function OccasionPage() {
             <AnimatePresence>
               {occasions.map((occ, i) => (
                 <OccasionCard
-                  key={occ._id}
+                  key={occ.id}
                   occasion={occ}
                   isFirst={i === 0}
                   isLast={i === occasions.length - 1}
-                  onEdit={() => navigate(`/occasion/${occ._id}/edit`)}
+                  onEdit={() => navigate(`/occasion/${occ.id}/edit`)}
                   onRemove={() => setRemoveTarget(occ)}
                   onMoveUp={() => handleReorder(i, 'up')}
                   onMoveDown={() => handleReorder(i, 'down')}
                   onToggle={() => handleToggle(occ)}
                   isReordering={isReordering}
-                  isToggling={togglingId === occ._id}
+                  isToggling={togglingId === occ.id}
                 />
               ))}
             </AnimatePresence>

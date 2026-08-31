@@ -129,7 +129,7 @@ export function EmailTemplatesPage() {
                 const cat = CATEGORY_CONFIG[tpl.category] || CATEGORY_CONFIG.custom;
                 return (
                   <motion.div
-                    key={tpl._id}
+                    key={tpl.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -159,7 +159,7 @@ export function EmailTemplatesPage() {
                         size="sm"
                         variant="outline"
                         className="flex-1 h-7 text-xs rounded-lg"
-                        onClick={() => navigate(`/email/templates/${tpl._id}/edit`)}
+                        onClick={() => navigate(`/email/templates/${tpl.id}/edit`)}
                       >
                         <Edit className="w-3 h-3 mr-1" /> Edit
                       </Button>
@@ -167,7 +167,7 @@ export function EmailTemplatesPage() {
                         size="sm"
                         variant="outline"
                         className="h-7 w-7 p-0 rounded-lg text-red-500 hover:bg-red-50 border-red-100"
-                        onClick={() => setDeleteId(tpl._id)}
+                        onClick={() => setDeleteId(tpl.id)}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>

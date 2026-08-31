@@ -89,7 +89,7 @@ interface Product {
   isFeatured: boolean;
   isBestSeller: boolean;
   isMadeInNigeria?: boolean;
-  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   estimatedDeliveryDays?: number;
   createdAt: string;
 }
@@ -237,11 +237,11 @@ export function ProductsListPage() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { label: string; className: string }> = {
-      approved: { label: 'Approved', className: 'bg-green-500/90 text-white border-0' },
-      pending: { label: 'Pending', className: 'bg-yellow-500/90 text-white border-0' },
-      rejected: { label: 'Rejected', className: 'bg-red-500/90 text-white border-0' },
+      APPROVED: { label: 'Approved', className: 'bg-green-500/90 text-white border-0' },
+      PENDING:  { label: 'Pending',  className: 'bg-yellow-500/90 text-white border-0' },
+      REJECTED: { label: 'Rejected', className: 'bg-red-500/90 text-white border-0' },
     };
-    const variant = variants[status] || variants.pending;
+    const variant = variants[status] || variants.PENDING;
     return <Badge className={`text-xs ${variant.className}`}>{variant.label}</Badge>;
   };
 
@@ -270,7 +270,7 @@ export function ProductsListPage() {
       await apiClient.deleteProduct(productToDelete.id);
       toast.success('Product deleted successfully');
       // Remove the product from the list
-      setProducts((prev) => prev.filter((p) => p._id !== productToDelete.id));
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
       setShowDeleteDialog(false);
       setProductToDelete(null);
     } catch (err) {
@@ -748,10 +748,10 @@ export function ProductsListPage() {
                   ...(product.occasionTags || []),
                 ];
                 return (
-                <StaggerItem key={product._id} className="h-full">
+                <StaggerItem key={product.id} className="h-full">
                   <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }} className="h-full">
                     <Card className="border-0 shadow-sm hover:shadow-lg transition-all overflow-hidden group cursor-pointer h-full flex flex-col"
-                      onClick={() => navigate(`/products/${product._id}`)}
+                      onClick={() => navigate(`/products/${product.id}`)}
                     >
                       {/* Product Image */}
                       <div
@@ -875,7 +875,7 @@ export function ProductsListPage() {
                             size="sm"
                             variant="outline"
                             className="flex-1 text-sm"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/products/${product._id}`); }}
+                            onClick={(e) => { e.stopPropagation(); navigate(`/products/${product.id}`); }}
                           >
                             <Eye className="w-3.5 h-3.5 mr-1.5" />
                             View
@@ -884,7 +884,7 @@ export function ProductsListPage() {
                             size="sm"
                             variant="outline"
                             className="text-sm"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-product/${product._id}`); }}
+                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-product/${product.id}`); }}
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
@@ -894,11 +894,11 @@ export function ProductsListPage() {
                             className="text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteClick(product._id, product.name);
+                              handleDeleteClick(product.id, product.name);
                             }}
-                            disabled={deletingProductId === product._id}
+                            disabled={deletingProductId === product.id}
                           >
-                            {deletingProductId === product._id ? (
+                            {deletingProductId === product.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
                               <Trash2 className="w-3.5 h-3.5" />

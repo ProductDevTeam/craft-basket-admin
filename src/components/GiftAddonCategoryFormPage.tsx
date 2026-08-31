@@ -27,7 +27,7 @@ export function GiftAddonCategoryFormPage() {
     if (!id) return;
     apiClient.getAddonCategories().then((res) => {
       const list = (res.data as any[]) || [];
-      const cat = list.find((c: any) => c._id === id);
+      const cat = list.find((c: any) => c.id === id);
       if (!cat) { toast.error('Category not found'); navigate('/gift-addons'); return; }
       setName(cat.name || '');
       setLabel(cat.label || '');

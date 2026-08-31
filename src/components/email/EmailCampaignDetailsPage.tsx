@@ -153,13 +153,13 @@ export function EmailCampaignDetailsPage() {
               variant="outline"
               size="sm"
               className="rounded-xl text-xs h-8"
-              onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/email/preview/${campaign._id}`, '_blank')}
+              onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/email/preview/${campaign.id}`, '_blank')}
             >
               <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
               Preview HTML
             </Button>
             {campaign.status === 'draft' && (
-              <Button size="sm" className="rounded-xl text-xs h-8 text-white" style={{ backgroundColor: '#F6511E' }} onClick={() => navigate(`/email/campaigns/${campaign._id}/edit`)}>
+              <Button size="sm" className="rounded-xl text-xs h-8 text-white" style={{ backgroundColor: '#F6511E' }} onClick={() => navigate(`/email/campaigns/${campaign.id}/edit`)}>
                 Edit
               </Button>
             )}
@@ -204,12 +204,12 @@ export function EmailCampaignDetailsPage() {
             <>
               <div className="divide-y divide-gray-50">
                 {recipients.map((r) => (
-                  <div key={r._id} className="flex items-center gap-4 px-6 py-3.5">
+                  <div key={r.id} className="flex items-center gap-4 px-6 py-3.5">
                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
-                      {r._id.charAt(0).toUpperCase()}
+                      {r.id.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{r._id}</p>
+                      <p className="text-sm font-medium text-gray-800 truncate">{r.id}</p>
                       <div className="flex items-center gap-1 mt-1 flex-wrap">
                         {Array.from(new Set(r.events.map((e) => e.type))).map((type) => {
                           const count = r.events.filter((e) => e.type === type).length;

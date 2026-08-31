@@ -64,7 +64,7 @@ interface Order {
 // Extract vendor ID string whether vendor is a populated object or a raw ID string
 function vendorId(p: Product): string {
   if (!p.vendor) return '';
-  return typeof p.vendor === 'object' ? p.vendor._id : p.vendor;
+  return typeof p.vendor === 'object' ? p.vendor.id : p.vendor;
 }
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
@@ -408,7 +408,7 @@ export function DeliverySandboxPage() {
     if (step !== 3 || !order || !tokenRef.current) return;
     pollingRef.current = setInterval(async () => {
       try {
-        const d = await call('GET', `/orders/${order._id}`, tokenRef.current);
+        const d = await call('GET', `/orders/${order.id}`, tokenRef.current);
         const o: Order = d.data;
         setPollCount((c) => c + 1);
         // Wait for both paymentStatus=paid AND deliveryId to be set
@@ -422,7 +422,7 @@ export function DeliverySandboxPage() {
       } catch {}
     }, 3000);
     return () => clearInterval(pollingRef.current!);
-  }, [step, order?._id]);
+  }, [step, order?.id]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -451,7 +451,7 @@ export function DeliverySandboxPage() {
     setError('');
     try {
       const items = [...cart.values()].map(({ product, qty }) => ({
-        productId: product._id,
+        productId: product.id,
         quantity: qty,
       }));
       const d = await call('POST', '/orders', tokenRef.current, {
@@ -474,7 +474,7 @@ export function DeliverySandboxPage() {
     setError('');
     try {
       const d = await call('POST', '/payments/initialize', tokenRef.current, {
-        orderId: order._id,
+        orderId: order.id,
       });
       const url = d.data?.authorization_url;
       const ref = d.data?.reference;
@@ -498,7 +498,7 @@ export function DeliverySandboxPage() {
       // Poll up to 5×2s for Kwik to write deliveryId after markOrderPaid
       let o: Order | null = null;
       for (let i = 0; i < 5; i++) {
-        const d = await call('GET', `/orders/${order!._id}`, tokenRef.current);
+        const d = await call('GET', `/orders/${order!.id}`, tokenRef.current);
         o = d.data as Order;
         if (o.paymentStatus === 'paid' && o.deliveryId) break;
         if (i < 4) await new Promise((r) => setTimeout(r, 2000));
@@ -662,10 +662,10 @@ export function DeliverySandboxPage() {
                 const toggleProduct = (p: Product) => {
                   setCart((prev) => {
                     const next = new Map(prev);
-                    if (next.has(p._id)) {
-                      next.delete(p._id);
+                    if (next.has(p.id)) {
+                      next.delete(p.id);
                     } else {
-                      next.set(p._id, { product: p, qty: 1 });
+                      next.set(p.id, { product: p, qty: 1 });
                     }
                     return next;
                   });
@@ -697,12 +697,12 @@ export function DeliverySandboxPage() {
                       <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1">
                         {products.map((p) => {
                           const img = p.images?.[0]?.url;
-                          const entry = cart.get(p._id);
+                          const entry = cart.get(p.id);
                           const inCart = !!entry;
                           const vName = vendorNames[vendorId(p)] ?? 'Vendor';
                           return (
                             <div
-                              key={p._id}
+                              key={p.id}
                               className={cn(
                                 'border rounded-xl p-3 transition-all',
                                 inCart
@@ -734,7 +734,7 @@ export function DeliverySandboxPage() {
                               {inCart && (
                                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-ebunly-orange/20">
                                   <button
-                                    onClick={() => setCartQty(p._id, -1)}
+                                    onClick={() => setCartQty(p.id, -1)}
                                     className="w-6 h-6 rounded-full border border-ebunly-orange/30 flex items-center justify-center hover:bg-orange-100"
                                   >
                                     <Minus className="w-3 h-3 text-ebunly-orange" />
@@ -743,7 +743,7 @@ export function DeliverySandboxPage() {
                                     {entry.qty}
                                   </span>
                                   <button
-                                    onClick={() => setCartQty(p._id, 1)}
+                                    onClick={() => setCartQty(p.id, 1)}
                                     className="w-6 h-6 rounded-full border border-ebunly-orange/30 flex items-center justify-center hover:bg-orange-100"
                                   >
                                     <Plus className="w-3 h-3 text-ebunly-orange" />
@@ -847,7 +847,7 @@ export function DeliverySandboxPage() {
                       <div className="py-3 border-t border-gray-100 mt-2 space-y-1.5">
                         {entries.map(({ product, qty }) => (
                           <div
-                            key={product._id}
+                            key={product.id}
                             className="flex justify-between text-xs text-gray-600"
                           >
                             <span className="truncate max-w-[60%]">
