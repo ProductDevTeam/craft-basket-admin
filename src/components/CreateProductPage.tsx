@@ -1692,6 +1692,41 @@ export function CreateProductPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Commission breakdown */}
+                  {Number(basePrice) > 0 && (() => {
+                    const price = Number(basePrice);
+                    const commissionRate = isPersonalizable ? 0.18 : 0.12;
+                    const commissionAmt = price * commissionRate;
+                    const vendorNet = price - commissionAmt;
+                    const fmt = (n: number) => n.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    return (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                        <p className="text-sm font-semibold text-gray-800">Vendor earnings breakdown</p>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between text-gray-500">
+                            <span>Customer pays</span>
+                            <span className="font-medium text-gray-800">₦{fmt(price)}</span>
+                          </div>
+                          <div className="flex justify-between text-gray-500">
+                            <span>
+                              Ebunly commission ({isPersonalizable ? '18% — personalised' : '12%'})
+                            </span>
+                            <span className="font-medium text-red-500">− ₦{fmt(commissionAmt)}</span>
+                          </div>
+                          <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold text-gray-800">
+                            <span>Vendor receives</span>
+                            <span style={{ color: '#F6511E' }}>₦{fmt(vendorNet)}</span>
+                          </div>
+                        </div>
+                        {!isPersonalizable && (
+                          <p className="text-xs text-gray-400">
+                            Commission increases to 18% if personalisation is enabled in Step 5.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </motion.div>
