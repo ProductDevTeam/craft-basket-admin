@@ -310,7 +310,7 @@ export function CreateProductPage() {
           const product = productRes.data as any;
 
           // Populate form fields
-          setVendorId(product.vendor?._id || product.vendor || '');
+          setVendorId(product.vendor?.id || product.vendor || '');
           setName(product.name || '');
           setDescription(product.description || '');
           // V2 IA Taxonomy
@@ -436,7 +436,7 @@ export function CreateProductPage() {
       const vendorParam = searchParams.get('vendor');
       if (vendorParam && vendors.length > 0) {
         // Verify the vendor exists in the vendors list
-        const vendorExists = vendors.some((v) => v._id === vendorParam);
+        const vendorExists = vendors.some((v) => v.id === vendorParam);
         if (vendorExists) {
           setVendorId(vendorParam);
         }
@@ -1008,7 +1008,7 @@ export function CreateProductPage() {
                           >
                             {vendorId
                               ? (() => {
-                                  const vendor = vendors.find((v) => v._id === vendorId);
+                                  const vendor = vendors.find((v) => v.id === vendorId);
                                   return vendor
                                     ? `${vendor.vendorInfo?.businessName || `${vendor.firstName} ${vendor.lastName}`}`
                                     : 'Select a vendor';
@@ -1025,14 +1025,14 @@ export function CreateProductPage() {
                               <CommandGroup>
                                 {vendors.map((vendor) => (
                                   <CommandItem
-                                    key={vendor._id}
+                                    key={vendor.id}
                                     value={`${vendor.vendorInfo?.businessName || ''} ${vendor.firstName} ${vendor.lastName} ${vendor.email}`}
-                                    onSelect={() => handleVendorChange(vendor._id)}
+                                    onSelect={() => handleVendorChange(vendor.id)}
                                   >
                                     <Check
                                       className={cn(
                                         'mr-2 h-4 w-4',
-                                        vendorId === vendor._id ? 'opacity-100' : 'opacity-0'
+                                        vendorId === vendor.id ? 'opacity-100' : 'opacity-0'
                                       )}
                                     />
                                     <div className="flex flex-col">

@@ -63,7 +63,7 @@ export function EmailCampaignsPage() {
   useEffect(() => { fetchCampaigns(); }, [page, statusFilter]);
 
   useEffect(() => {
-    const hasSending = campaigns.some((c) => c.status === 'sending');
+    const hasSending = campaigns.some((c) => c.status === 'SENDING');
     if (!hasSending) return;
     const interval = setInterval(() => fetchCampaigns(true), 3000);
     return () => clearInterval(interval);
@@ -208,7 +208,7 @@ export function EmailCampaignsPage() {
                 const cfg = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.draft;
                 return (
                   <motion.div
-                    key={campaign._id}
+                    key={campaign.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98 }}
@@ -217,10 +217,10 @@ export function EmailCampaignsPage() {
                   >
                     {/* Icon */}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
-                      {campaign.status === 'sent' && <CheckCircle2 className={`w-5 h-5 ${cfg.text}`} />}
-                      {campaign.status === 'sending' && <Loader2 className={`w-5 h-5 ${cfg.text} animate-spin`} />}
-                      {campaign.status === 'scheduled' && <Clock className={`w-5 h-5 ${cfg.text}`} />}
-                      {campaign.status === 'failed' && <AlertCircle className={`w-5 h-5 ${cfg.text}`} />}
+                      {campaign.status === 'SENT' && <CheckCircle2 className={`w-5 h-5 ${cfg.text}`} />}
+                      {campaign.status === 'SENDING' && <Loader2 className={`w-5 h-5 ${cfg.text} animate-spin`} />}
+                      {campaign.status === 'SCHEDULED' && <Clock className={`w-5 h-5 ${cfg.text}`} />}
+                      {campaign.status === 'FAILED' && <AlertCircle className={`w-5 h-5 ${cfg.text}`} />}
                       {['draft', 'cancelled'].includes(campaign.status) && <Mail className={`w-5 h-5 ${cfg.text}`} />}
                     </div>
 
@@ -242,7 +242,7 @@ export function EmailCampaignsPage() {
                         <Users className="w-3.5 h-3.5" />
                         <span>{AUDIENCE_LABELS[campaign.audienceSegment] || campaign.audienceSegment}</span>
                       </div>
-                      {(campaign.status === 'sent' || campaign.status === 'sending') && (
+                      {(campaign.status === 'SENT' || campaign.status === 'SENDING') && (
                         <div className="flex items-center gap-1.5">
                           <Send className="w-3.5 h-3.5" />
                           <span className="text-green-600 font-medium">{campaign.successCount}</span>
@@ -264,27 +264,27 @@ export function EmailCampaignsPage() {
                     {/* Actions */}
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       {['sent', 'sending', 'scheduled'].includes(campaign.status) && (
-                        <button onClick={() => navigate(`/email/campaigns/${campaign._id}`)} className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors" title="View analytics">
+                        <button onClick={() => navigate(`/email/campaigns/${campaign.id}`)} className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors" title="View analytics">
                           <Eye className="w-4 h-4 text-blue-500" />
                         </button>
                       )}
                       {['draft', 'scheduled'].includes(campaign.status) && (
-                        <button onClick={() => navigate(`/email/campaigns/${campaign._id}/edit`)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" title="Edit">
+                        <button onClick={() => navigate(`/email/campaigns/${campaign.id}/edit`)} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors" title="Edit">
                           <Edit className="w-4 h-4 text-gray-400" />
                         </button>
                       )}
                       {['draft', 'scheduled'].includes(campaign.status) && (
-                        <button onClick={() => setSendId(campaign._id)} className="p-1.5 rounded-lg hover:bg-green-50 transition-colors" title="Send now">
+                        <button onClick={() => setSendId(campaign.id)} className="p-1.5 rounded-lg hover:bg-green-50 transition-colors" title="Send now">
                           <Send className="w-4 h-4 text-green-500" />
                         </button>
                       )}
-                      {campaign.status === 'scheduled' && (
-                        <button onClick={() => setCancelId(campaign._id)} className="p-1.5 rounded-lg hover:bg-orange-50 transition-colors" title="Cancel">
+                      {campaign.status === 'SCHEDULED' && (
+                        <button onClick={() => setCancelId(campaign.id)} className="p-1.5 rounded-lg hover:bg-orange-50 transition-colors" title="Cancel">
                           <XCircle className="w-4 h-4 text-orange-500" />
                         </button>
                       )}
                       {['draft', 'cancelled'].includes(campaign.status) && (
-                        <button onClick={() => setDeleteId(campaign._id)} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Delete">
+                        <button onClick={() => setDeleteId(campaign.id)} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Delete">
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>
                       )}

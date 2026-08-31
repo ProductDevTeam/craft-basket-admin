@@ -40,12 +40,12 @@ export function GiftAddonItemFormPage() {
         const cats = (catRes.data as any[]) || [];
 
         if (isEdit && itemId) {
-          const cat = cats.find((c: any) => c._id === resolvedCategoryId);
+          const cat = cats.find((c: any) => c.id === resolvedCategoryId);
           setCategory({ name: cat?.name || '', filterTags: cat?.filterTags || [] });
 
           const itemsRes = await apiClient.getAddonItems(resolvedCategoryId);
           const items = (itemsRes.data as any[]) || [];
-          const item = items.find((i: any) => i._id === itemId);
+          const item = items.find((i: any) => i.id === itemId);
           if (!item) { toast.error('Item not found'); navigate('/gift-addons'); return; }
           setName(item.name || '');
           setPrice(item.price?.toString() || '');
@@ -57,7 +57,7 @@ export function GiftAddonItemFormPage() {
           setSortOrder(item.sortOrder ?? 0);
           setImagePreview(item.image?.url || null);
         } else {
-          const cat = cats.find((c: any) => c._id === resolvedCategoryId);
+          const cat = cats.find((c: any) => c.id === resolvedCategoryId);
           setCategory({ name: cat?.name || '', filterTags: cat?.filterTags || [] });
         }
       } catch {

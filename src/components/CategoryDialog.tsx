@@ -67,7 +67,7 @@ export function CategoryDialog({
         setParent(
           category.parent
             ? typeof category.parent === 'object'
-              ? category.parent._id
+              ? category.parent.id
               : (category.parent as string)
             : ''
         );
@@ -109,7 +109,7 @@ export function CategoryDialog({
   };
 
   // Filter out the current category from parent options (can't be its own parent)
-  const availableParents = parentCategories.filter((p) => p._id !== category?._id);
+  const availableParents = parentCategories.filter((p) => p.id !== category?.id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -163,7 +163,7 @@ export function CategoryDialog({
                 <SelectContent>
                   <SelectItem value="none">None (Top Level)</SelectItem>
                   {availableParents.map((p) => (
-                    <SelectItem key={p._id} value={p._id}>
+                    <SelectItem key={p.id} value={p.id}>
                       {p.name}
                     </SelectItem>
                   ))}

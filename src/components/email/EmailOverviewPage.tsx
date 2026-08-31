@@ -39,7 +39,7 @@ export function EmailOverviewPage() {
   };
 
   const activeRules = rules.filter((r) => r.isEnabled).length;
-  const sentCampaigns = campaigns.filter((c) => c.status === 'sent').length;
+  const sentCampaigns = campaigns.filter((c) => c.status === 'SENT').length;
 
   const stats = [
     {
@@ -172,9 +172,9 @@ export function EmailOverviewPage() {
                   const cfg = statusConfig[c.status] || statusConfig.draft;
                   return (
                     <div
-                      key={c._id}
+                      key={c.id}
                       className="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50/60 cursor-pointer transition-colors"
-                      onClick={() => ['sent','sending','scheduled'].includes(c.status) && navigate(`/email/campaigns/${c._id}`)}
+                      onClick={() => ['sent','sending','scheduled'].includes(c.status) && navigate(`/email/campaigns/${c.id}`)}
                     >
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFF4F0' }}>
                         <Mail className="w-3.5 h-3.5" style={{ color: '#F6511E' }} />
@@ -184,7 +184,7 @@ export function EmailOverviewPage() {
                         <p className="text-xs text-gray-400 truncate">{c.subject}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        {c.status === 'sent' && c.successCount > 0 && (
+                        {c.status === 'SENT' && c.successCount > 0 && (
                           <span className="text-xs text-gray-400">{c.successCount} sent</span>
                         )}
                         <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${cfg.cls}`}>{cfg.label}</span>
@@ -220,7 +220,7 @@ export function EmailOverviewPage() {
               <div className="divide-y divide-gray-50">
                 {rules.map((r) => (
                   <div
-                    key={r._id}
+                    key={r.id}
                     className="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50/60 cursor-pointer transition-colors"
                     onClick={() => navigate('/email/automation')}
                   >

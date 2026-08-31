@@ -142,7 +142,7 @@ export function EmailCampaignFormPage() {
         await apiClient.updateEmailCampaign(id!, payload);
       } else {
         const r = await apiClient.createEmailCampaign(payload);
-        if (r.success && r.data) campaignId = r.data._id;
+        if (r.success && r.data) campaignId = r.data.id;
       }
       if (campaignId) {
         await apiClient.sendEmailCampaign(campaignId);
@@ -240,7 +240,7 @@ export function EmailCampaignFormPage() {
                 <SelectContent>
                   <SelectItem value="none">No template</SelectItem>
                   {templates.map((t) => (
-                    <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
