@@ -39,7 +39,7 @@ export function EmailOverviewPage() {
   };
 
   const activeRules = rules.filter((r) => r.isEnabled).length;
-  const sentCampaigns = campaigns.filter((c) => c.status === 'sent').length;
+  const sentCampaigns = campaigns.filter((c) => c.status === 'SENT').length;
 
   const stats = [
     {
@@ -184,7 +184,7 @@ export function EmailOverviewPage() {
                         <p className="text-xs text-gray-400 truncate">{c.subject}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        {c.status === 'sent' && c.successCount > 0 && (
+                        {c.status === 'SENT' && c.successCount > 0 && (
                           <span className="text-xs text-gray-400">{c.successCount} sent</span>
                         )}
                         <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${cfg.cls}`}>{cfg.label}</span>

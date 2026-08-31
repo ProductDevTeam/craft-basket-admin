@@ -306,7 +306,10 @@ export function VendorsPage() {
                       </TableCell>
                       <TableCell className="text-gray-600">{vendor.email}</TableCell>
                       <TableCell className="text-center">
-                        <Badge className="bg-green-100 text-green-700">Active</Badge>
+                        {vendor.isActive
+                          ? <Badge className="bg-green-100 text-green-700">Active</Badge>
+                          : <Badge className="bg-red-100 text-red-700">Inactive</Badge>
+                        }
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

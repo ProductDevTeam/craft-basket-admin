@@ -15,6 +15,7 @@ export interface Vendor {
   firstName: string;
   lastName: string;
   email: string;
+  isActive: boolean;
   vendorInfo?: {
     businessName: string;
   };
@@ -210,7 +211,7 @@ export interface EmailTemplate {
   updatedAt: string;
 }
 
-export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed' | 'cancelled';
+export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'FAILED' | 'CANCELLED';
 export type AudienceSegment = 'all_customers' | 'all_vendors' | 'birthday_this_month' | 'new_customers_30d' | 'inactive_customers_90d' | 'custom';
 
 export interface EmailCampaign {

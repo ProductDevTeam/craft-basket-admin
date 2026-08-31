@@ -16,7 +16,7 @@ import { ProductViewPageSkeleton } from '@/components/ui/skeletons';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Product {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   shortDescription?: string;
@@ -24,7 +24,7 @@ interface Product {
   compareAtPrice?: number;
   discountPercentage?: number;
   category?: {
-    _id: string;
+    id: string;
     name: string;
     slug: string;
   };
@@ -37,7 +37,7 @@ interface Product {
   occasion?: string[];
   giftType?: string[];
   vendor: {
-    _id: string;
+    id: string;
     firstName: string;
     lastName: string;
     email: string;

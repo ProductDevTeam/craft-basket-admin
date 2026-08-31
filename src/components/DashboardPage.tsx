@@ -11,7 +11,7 @@ import { motion, AnimatePresence, PageTransition } from '@/lib/motion';
 import { StatsGridSkeleton, ChartSkeleton } from '@/components/ui/skeletons';
 
 interface ActivityLog {
-  _id: string;
+  id: string;
   admin: { firstName: string; lastName: string; email: string };
   action: 'create' | 'update' | 'delete' | 'approve' | 'reject' | 'status-change' | 'login' | 'logout';
   resourceType: 'user' | 'category' | 'product' | 'customization-request' | 'order' | 'auth' | 'vendor_invitation';

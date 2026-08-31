@@ -37,7 +37,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface Category {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   description?: string;
@@ -47,7 +47,7 @@ export interface Category {
   cardBg?: string;
   mobileBg?: string;
   featuredOnHomepage?: boolean;
-  parent?: { _id: string; name: string; slug: string } | null;
+  parent?: { id: string; name: string; slug: string } | null;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;

@@ -13,8 +13,8 @@ import { CampaignDetailsSkeleton } from '@/components/ui/skeletons';
 import type { EmailCampaign } from '@/types';
 
 interface Recipient {
-  _id: string;
-  status: 'sent' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed';
+  id: string;
+  status: 'SENT' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed';
   lastEvent: string;
   events: Array<{ type: string; timestamp: string; link?: string }>;
 }
@@ -158,7 +158,7 @@ export function EmailCampaignDetailsPage() {
               <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
               Preview HTML
             </Button>
-            {campaign.status === 'draft' && (
+            {campaign.status === 'DRAFT' && (
               <Button size="sm" className="rounded-xl text-xs h-8 text-white" style={{ backgroundColor: '#F6511E' }} onClick={() => navigate(`/email/campaigns/${campaign.id}/edit`)}>
                 Edit
               </Button>

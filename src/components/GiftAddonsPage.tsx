@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AddonCategory {
-  _id: string;
+  id: string;
   name: string;
   label: string;
   filterLabel: string;
@@ -32,7 +32,7 @@ interface AddonCategory {
 }
 
 interface AddonItem {
-  _id: string;
+  id: string;
   category: string;
   name: string;
   price: number;

@@ -40,10 +40,10 @@ async function call(method: string, path: string, token?: string, body?: unknown
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Product {
-  _id: string;
+  id: string;
   name: string;
   basePrice: number;
-  vendor: string | { _id: string; vendorInfo?: { businessName?: string }; firstName?: string };
+  vendor: string | { id: string; vendorInfo?: { businessName?: string }; firstName?: string };
   images?: { url: string }[];
 }
 
@@ -53,7 +53,7 @@ interface CartEntry {
 }
 
 interface Order {
-  _id: string;
+  id: string;
   orderNumber: string;
   totalAmount: number;
   paymentStatus: string;
@@ -412,7 +412,7 @@ export function DeliverySandboxPage() {
         const o: Order = d.data;
         setPollCount((c) => c + 1);
         // Wait for both paymentStatus=paid AND deliveryId to be set
-        if (o.paymentStatus === 'paid' && o.deliveryId) {
+        if (o.paymentStatus === 'PAID' && o.deliveryId) {
           clearInterval(pollingRef.current!);
           setOrder(o);
           setJobId(o.deliveryId);
@@ -500,11 +500,11 @@ export function DeliverySandboxPage() {
       for (let i = 0; i < 5; i++) {
         const d = await call('GET', `/orders/${order!.id}`, tokenRef.current);
         o = d.data as Order;
-        if (o.paymentStatus === 'paid' && o.deliveryId) break;
+        if (o.paymentStatus === 'PAID' && o.deliveryId) break;
         if (i < 4) await new Promise((r) => setTimeout(r, 2000));
       }
 
-      if (!o || o.paymentStatus !== 'paid') {
+      if (!o || o.paymentStatus !== 'PAID') {
         setError('Payment not yet confirmed — try again in a moment.');
         return;
       }
